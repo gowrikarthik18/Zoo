@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Burp Hero: The Great Feast Run</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -13,30 +16,39 @@
     <!-- Title screen -->
     <div class="overlay" id="titleScreen">
       <div class="panel">
+        <div class="eyebrow">A Feast-Fuelled Platformer</div>
         <h1>Burp Hero</h1>
         <h2>The Great Feast Run</h2>
-        <p class="story">Run to the <b>Ultimate Gift</b>! Eat Bawarchi Biryani, whole BBQ chicken,
-          idli and bonda along the way (every bite = a big BURP). Stomp the evil green veggies!</p>
+        <p class="story">Fight through the green-veggie gang, eat everything on the way and claim the
+          <b>Ultimate Gift</b>. Bawarchi Biryani, whole BBQ chicken, idli and bonda: every bite counts.</p>
 
         <div class="faces">
           <div class="faceBox">
-            <canvas id="heroPreview" width="96" height="96"></canvas>
-            <label class="btn small">Hero face
+            <canvas id="heroPreview" width="192" height="192"></canvas>
+            <span class="role">Hero</span>
+            <label class="btn ghost">Change
               <input type="file" accept="image/*" id="heroUpload" hidden />
             </label>
           </div>
+          <div class="vs">VS</div>
           <div class="faceBox">
-            <canvas id="veggiePreview" width="96" height="96"></canvas>
-            <label class="btn small">Veggie face
+            <canvas id="veggiePreview" width="192" height="192"></canvas>
+            <span class="role">Villain</span>
+            <label class="btn ghost">Change
               <input type="file" accept="image/*" id="veggieUpload" hidden />
             </label>
           </div>
         </div>
-        <button class="link" id="resetFaces">reset faces</button>
 
-        <button class="btn big" id="startBtn">START</button>
-        <p class="help">Move: ← → or A D &nbsp;·&nbsp; Jump: Space / ↑ / W &nbsp;·&nbsp; Run: Shift
-          &nbsp;·&nbsp; Pause: P &nbsp;·&nbsp; Mute: M</p>
+        <button class="btn big" id="startBtn">Start Game</button>
+        <div class="help">
+          <span><kbd>←</kbd><kbd>→</kbd> Move</span>
+          <span><kbd>Space</kbd> Jump</span>
+          <span><kbd>Shift</kbd> Run</span>
+          <span><kbd>P</kbd> Pause</span>
+          <span><kbd>M</kbd> Mute</span>
+        </div>
+        <button class="link" id="resetFaces">Reset faces</button>
       </div>
     </div>
 
@@ -44,29 +56,29 @@
     <div class="overlay hidden" id="pauseScreen">
       <div class="panel">
         <h1>Paused</h1>
-        <button class="btn big" id="resumeBtn">RESUME</button>
+        <button class="btn big" id="resumeBtn">Resume</button>
       </div>
     </div>
 
     <!-- Game over -->
-    <div class="overlay hidden" id="overScreen">
+    <div class="overlay hidden danger" id="overScreen">
       <div class="panel">
         <h1>Game Over</h1>
         <img id="overImg" src="assets/game-over.jpg" alt="" onerror="this.style.display='none'" />
-        <p class="small">The veggies won this time...</p>
         <p class="stats" id="overStats"></p>
-        <button class="btn big" id="retryBtn">TRY AGAIN</button>
-        <button class="link" id="overMenuBtn">main menu</button>
+        <button class="btn big" id="retryBtn">Try Again</button>
+        <button class="link" id="overMenuBtn">Main menu</button>
       </div>
     </div>
 
     <!-- Win -->
     <div class="overlay hidden" id="winScreen">
       <div class="panel">
-        <h1>You Got The Ultimate Gift!</h1>
-        <p class="stats" id="winStats"></p>
-        <button class="btn big" id="againBtn">PLAY AGAIN</button>
-        <button class="link" id="winMenuBtn">main menu</button>
+        <div class="eyebrow">Victory</div>
+        <h1>The Gift Is Yours</h1>
+        <div class="stats table" id="winStats"></div>
+        <button class="btn big" id="againBtn">Play Again</button>
+        <button class="link" id="winMenuBtn">Main menu</button>
       </div>
     </div>
 
