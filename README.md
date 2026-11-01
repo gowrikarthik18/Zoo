@@ -2,8 +2,8 @@
 
 *Will Abbai get all his food?*
 
-A side-scrolling platformer for the browser. Guide a big-bellied hero to the **Ultimate Gift**,
-eat everything along the way (every bite makes him burp), and stomp the evil green vegetables.
+A side-scrolling platformer for the browser. Help **Basha Bhai** fight **Mental Balayya**'s veggie gang,
+eat everything on the way (every bite makes him burp) and reach the **Compound Gate** to get his TDP membership.
 
 ## Play
 Open `index.html` in any modern browser. You don't need to install anything.
