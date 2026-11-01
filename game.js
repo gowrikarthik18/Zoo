@@ -1178,9 +1178,9 @@
   }
 
   // ---- Enemies: Mental Balayya's goons. Three funny outfits, all with his head:
-  //   lungi  - checked lungi, white banian, chappals, arms flapping
-  //   lathi  - pink kurta-pajama, swinging a lathi over his head
-  //   shawl  - white dhoti and shirt, orange shawl, shaking his fist
+  //   lungi  - yellow checked lungi, white banian, chappals, arms flapping
+  //   lathi  - yellow kurta, white pajama, swinging a lathi over his head
+  //   shawl  - white dhoti and shirt, yellow shawl, shaking his fist
   const SKIN = '#b9784a';
   function limb(x0, y0, x1, y1, w, col) {
     ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round';
@@ -1221,15 +1221,15 @@
       // checked lungi
       ctx.save();
       ctx.beginPath(); ctx.moveTo(-12, -17); ctx.lineTo(12, -17); ctx.lineTo(13.5, -4.5); ctx.lineTo(-13.5, -4.5); ctx.closePath();
-      ctx.fillStyle = '#1f4fa0'; ctx.fill(); ctx.clip();
-      ctx.strokeStyle = 'rgba(230,50,50,0.8)'; ctx.lineWidth = 1.3;
+      ctx.fillStyle = '#f5c400'; ctx.fill(); ctx.clip();
+      ctx.strokeStyle = 'rgba(200,40,30,0.75)'; ctx.lineWidth = 1.3;
       for (let gx = -14; gx <= 14; gx += 4) { ctx.beginPath(); ctx.moveTo(gx, -18); ctx.lineTo(gx, -4); ctx.stroke(); }
-      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 0.9;
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 0.9;
       for (let gy = -16; gy <= -4; gy += 4) { ctx.beginPath(); ctx.moveTo(-15, gy); ctx.lineTo(15, gy); ctx.stroke(); }
       ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(4, -18, 10, 14);
       ctx.restore();
       ctx.fillStyle = '#f4f1ea'; ctx.fillRect(-13.5, -5.5, 27, 1.4);       // hem
-      ctx.fillStyle = '#163c7a'; ctx.beginPath(); ctx.moveTo(-2, -17); ctx.lineTo(3, -17); ctx.lineTo(1, -10); ctx.fill(); // knot
+      ctx.fillStyle = '#c99a00'; ctx.beginPath(); ctx.moveTo(-2, -17); ctx.lineTo(3, -17); ctx.lineTo(1, -10); ctx.fill(); // knot
       // back arm, banian belly, front arm (flapping)
       const fl = Math.sin(t * 1.2);
       limb(-10, -25, -16 - fl * 3, -16 + fl * 4, 4, SKIN); hand(-16 - fl * 3, -16 + fl * 4);
@@ -1243,18 +1243,18 @@
     } else if (e.kind === 'lathi') {
       limb(-4, -10, -5 + step, -2.5, 5, '#f1ede4'); limb(4, -10, 5 - step, -2.5, 5, '#f1ede4');
       const sw = Math.sin(t * 0.9);
-      limb(-9, -25, -14 - sw * 2, -15, 4, '#c2255c'); hand(-14 - sw * 2, -14.5);
+      limb(-9, -25, -14 - sw * 2, -15, 4, '#e0ad00'); hand(-14 - sw * 2, -14.5);
       // pink kurta
-      ctx.fillStyle = linear(ctx, -14, 0, 14, 0, [[0, '#a61e4d'], [0.45, '#f06595'], [1, '#a61e4d']]);
+      ctx.fillStyle = linear(ctx, -14, 0, 14, 0, [[0, '#c99a00'], [0.45, '#ffe066'], [1, '#c99a00']]);
       ctx.beginPath(); ctx.moveTo(-10.5, -29); ctx.lineTo(10.5, -29); ctx.quadraticCurveTo(15, -18, 14.5, -8); ctx.lineTo(-14.5, -8); ctx.quadraticCurveTo(-15, -18, -10.5, -29); ctx.fill();
-      ctx.strokeStyle = 'rgba(60,5,20,0.5)'; ctx.lineWidth = 0.8; ctx.stroke();
-      ctx.strokeStyle = '#f6c453'; ctx.lineWidth = 1.2;
+      ctx.strokeStyle = 'rgba(90,60,0,0.5)'; ctx.lineWidth = 0.8; ctx.stroke();
+      ctx.strokeStyle = '#c92a2a'; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(0, -28.5); ctx.lineTo(0, -19); ctx.stroke();
-      ctx.fillStyle = '#f6c453'; for (const by of [-26, -23, -20]) { ctx.beginPath(); ctx.arc(0.8, by, 0.8, 0, TAU); ctx.fill(); }
+      ctx.fillStyle = '#c92a2a'; for (const by of [-26, -23, -20]) { ctx.beginPath(); ctx.arc(0.8, by, 0.8, 0, TAU); ctx.fill(); }
       ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.ellipse(-5, -20, 3, 7, 0.2, 0, TAU); ctx.fill();
       // raised arm swinging a lathi
       const hx = 13 + sw * 1.5, hy = -36 + Math.abs(sw) * 2;
-      limb(9, -26, hx, hy, 4, '#c2255c');
+      limb(9, -26, hx, hy, 4, '#e0ad00');
       ctx.save(); ctx.translate(hx, hy); ctx.rotate(-0.9 + sw * 0.9);
       ctx.lineCap = 'round';
       ctx.strokeStyle = '#3a2210'; ctx.lineWidth = 4.4;
@@ -1276,11 +1276,11 @@
       belly(radial(ctx, -4, -24, 1, 15, [[0, '#ffffff'], [1, '#e1dccf']]));
       ctx.fillStyle = '#cfc7ba'; for (const by of [-25, -21, -17.5]) { ctx.beginPath(); ctx.arc(0.5, by, 0.8, 0, TAU); ctx.fill(); }
       // orange shawl draped over the shoulders
-      ctx.fillStyle = linear(ctx, -12, -30, 12, -10, [[0, '#ff922b'], [1, '#d9480f']]);
+      ctx.fillStyle = linear(ctx, -12, -30, 12, -10, [[0, '#ffe066'], [1, '#e0ad00']]);
       ctx.beginPath();
       ctx.moveTo(-12, -28); ctx.quadraticCurveTo(0, -32, 12, -28); ctx.lineTo(13, -12); ctx.lineTo(8, -12); ctx.lineTo(8, -24);
       ctx.quadraticCurveTo(0, -26, -8, -24); ctx.lineTo(-8, -12); ctx.lineTo(-13, -12); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 0.9;
+      ctx.strokeStyle = '#c92a2a'; ctx.lineWidth = 1.1;
       ctx.beginPath(); ctx.moveTo(-13, -12.5); ctx.lineTo(-8, -12.5); ctx.moveTo(8, -12.5); ctx.lineTo(13, -12.5); ctx.stroke();
       // fist shaking in the air
       const sh = Math.sin(t * 2.2) * 2.5;
