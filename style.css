@@ -116,11 +116,13 @@ kbd {
 }
 
 /* touch controls */
-#touch { position: absolute; inset: auto 0 14px 0; display: flex; justify-content: space-between; padding: 0 18px; pointer-events: none; }
+#touch { position: absolute; inset: auto 0 4px 0; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 16px; pointer-events: none; }
 #touch button {
-  pointer-events: auto; width: 84px; height: 84px; margin: 0 6px; border-radius: 50%;
-  border: 1px solid rgba(255, 214, 140, 0.35); background: rgba(12, 8, 22, 0.35); color: rgba(255, 243, 196, 0.9);
-  font-size: 30px; touch-action: none; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  pointer-events: auto; width: 128px; height: 128px; margin: 0 8px; border-radius: 50%;
+  -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+  border: 1.5px solid rgba(255, 214, 140, 0.45); background: rgba(12, 8, 22, 0.18); color: rgba(255, 243, 196, 0.9);
+  font-size: 46px; touch-action: none; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
 }
-#touch button.tsmall { font: 400 20px var(--display); letter-spacing: 2px; width: 68px; height: 68px; }
+#touch button.tsmall { font: 400 26px var(--display); letter-spacing: 2px; width: 96px; height: 96px; }
+#touch button[data-key="jump"] { width: 150px; height: 150px; font-size: 54px; }
 #touch button.on { background: rgba(255, 214, 140, 0.25); }

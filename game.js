@@ -16,7 +16,7 @@
   const ctx = canvas.getContext('2d');
   const VW = 960, VH = 560, T = 40, ROWS = 14;
   const TAU = Math.PI * 2;
-  const GRAV = 2000, MAXFALL = 900, JUMP_V = 760;
+  const GRAV = 2000, MAXFALL = 950, JUMP_V = 900; // full jump ~5 tiles high
   const SS = 2; // supersampling for cached sprites
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const FONT_DISPLAY = '"Bebas Neue", Impact, "Arial Narrow", sans-serif';
@@ -221,6 +221,58 @@
 
     osc.connect(filt).connect(am).connect(env).connect(master);
     for (const o of [osc, lfo, amLfo]) { o.start(t); o.stop(t + dur + 0.05); }
+  }
+  let noiseBuf = null;
+  function noise(a) {
+    if (!noiseBuf) {
+      noiseBuf = a.createBuffer(1, a.sampleRate, a.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const n = a.createBufferSource(); n.buffer = noiseBuf; n.loop = true;
+    return n;
+  }
+  function synthFart() {
+    const a = audio(); if (!a || muted) return;
+    const t = a.currentTime;
+    const dur = 0.45 + Math.random() * 0.55;
+    const base = 50 + Math.random() * 45;
+
+    const osc = a.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(base * (1.1 + Math.random() * 0.4), t);
+    osc.frequency.linearRampToValueAtTime(base * (0.7 + Math.random() * 0.3), t + dur);
+    const wob = a.createOscillator(); wob.frequency.value = 5 + Math.random() * 6;   // slow pitch wobble
+    const wobG = a.createGain(); wobG.gain.value = base * 0.25;
+    wob.connect(wobG).connect(osc.frequency);
+
+    const flutter = a.createGain(); flutter.gain.value = 0.5;                        // the "brrrr"
+    const fl = a.createOscillator(); fl.type = 'square'; fl.frequency.value = 22 + Math.random() * 20;
+    const flG = a.createGain(); flG.gain.value = 0.5;
+    fl.connect(flG).connect(flutter.gain);
+
+    const n = noise(a);                                                              // airy rasp
+    const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 260 + Math.random() * 200; bp.Q.value = 1.2;
+    const nG = a.createGain(); nG.gain.value = 0.35;
+    n.connect(bp).connect(nG).connect(flutter);
+
+    const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 3;
+    lp.frequency.setValueAtTime(700, t); lp.frequency.linearRampToValueAtTime(300, t + dur);
+
+    const env = a.createGain();
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.exponentialRampToValueAtTime(0.9, t + 0.025);
+    env.gain.setValueAtTime(0.85, t + dur * 0.7);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+
+    osc.connect(flutter);
+    flutter.connect(lp).connect(env).connect(master);
+    for (const o of [osc, wob, fl, n]) { o.start(t); o.stop(t + dur + 0.05); }
+  }
+  // Eating makes the hero burp or fart (random). Returns which one, for the on-screen text.
+  function eatSound() {
+    if (Math.random() < 0.5) { burp(); return 'burp'; }
+    synthFart(); return 'fart';
   }
   function burp() {
     if (muted) return;
@@ -495,12 +547,14 @@
   if ('ontouchstart' in window || navigator.maxTouchPoints > 0) touchEl.classList.remove('hidden');
   touchEl.querySelectorAll('button').forEach(b => {
     const k = b.dataset.key;
-    const down = e => { e.preventDefault(); audio(); press(k); b.classList.add('on'); };
+    const down = e => {
+      e.preventDefault(); audio(); press(k); b.classList.add('on');
+      try { b.setPointerCapture(e.pointerId); } catch (err) { /* not supported */ }
+    };
     const up = e => { e.preventDefault(); release(k); b.classList.remove('on'); };
     b.addEventListener('pointerdown', down);
     b.addEventListener('pointerup', up);
     b.addEventListener('pointercancel', up);
-    b.addEventListener('pointerleave', up);
   });
 
   // ------------------------------------------------------------------ State
@@ -575,8 +629,8 @@
 
     if (p.won) { updateWin(dt); return; }
 
-    const maxV = keys.run ? 360 : 250;
-    const acc = p.onGround ? 1800 : 1200;
+    const maxV = keys.run ? 230 : 160;   // walk / run speed
+    const acc = p.onGround ? 1100 : 800;
     if (keys.left && !keys.right) { p.vx -= acc * dt; p.face = -1; }
     else if (keys.right && !keys.left) { p.vx += acc * dt; p.face = 1; }
     else {
@@ -589,10 +643,12 @@
     p.jumpBuf = jumpPressed ? 0.12 : p.jumpBuf - dt;
     jumpPressed = false;
     if (p.jumpBuf > 0 && p.coyote > 0) {
-      p.vy = -JUMP_V; p.coyote = 0; p.jumpBuf = 0; sfx.jump();
+      p.vy = -JUMP_V; p.coyote = 0; p.jumpBuf = 0; p.jumpTime = 0; sfx.jump();
       burst(p.x + p.w / 2, p.y + p.h, ['rgba(230,200,160,0.8)'], 6, 90, 200);
     }
-    if (!keys.jump && p.vy < -320) p.vy = -320;
+    // releasing jump early gives a shorter jump, but even a quick tap clears ~3 blocks
+    p.jumpTime = (p.jumpTime || 0) + dt;
+    if (!keys.jump && p.jumpTime > 0.12 && p.vy < -420) p.vy = -420;
     p.vy = Math.min(p.vy + GRAV * dt, MAXFALL);
 
     p.prevY = p.y;
@@ -617,8 +673,8 @@
         eaten++;
         score += FOOD[f.type].pts;
         p.fat = 1 + Math.min(0.45, eaten * 0.015);
-        burp();
-        addText(f.x, fy - 14, 'BURRRP!', 'burp');
+        const snd = eatSound();
+        addText(f.x, fy - 14, snd === 'burp' ? 'BURRRP!' : 'PRRRRT!', 'burp');
         addText(f.x, fy + 10, `+${FOOD[f.type].pts}  ${FOOD[f.type].name}`, 'info');
         burst(f.x, fy, ['#ffe39a', '#ffb347', '#fff6dc'], 14, 170, 300, true);
       }
