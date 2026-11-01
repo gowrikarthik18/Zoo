@@ -63,7 +63,7 @@
   // Cut-out heads (face + hair, transparent background) from the photos, in assets/:
   //   hero-head.png    Basha Bhai while playing
   //   caught-head.png  Basha Bhai's shocked face when Mental Balayya catches him
-  //   villain-head.png Mental Balayya, on every veggie
+  //   villain-head.png Mental Balayya, on every goon
   const heads = { hero: null, caught: null, villain: null };
 
   function loadImage(src) {
@@ -404,7 +404,7 @@
     const food = (col, row, type) => foods.push({ x: col * T + T / 2, y: row * T + T / 2, type, phase: Math.random() * TAU, got: false });
     const line = (col, row, n, types) => { for (let i = 0; i < n; i++) food(col + i, row, types[i % types.length]); };
     const enemy = (col, row, kind) => enemies.push({
-      kind, x: col * T - 7, y: (row + 1) * T - 60, w: 54, h: 60,
+      kind, x: col * T - 4, y: (row + 1) * T - 72, w: 48, h: 72,
       vx: 0, vy: 0, dir: -1, speed: 55 + Math.random() * 20, onGround: false,
       dead: false, squash: 0, gone: false, phase: Math.random() * TAU,
     });
@@ -413,14 +413,14 @@
     ground(0, 30);
     line(7, 10, 5, ['i', 'o']);
     plat(14, 8, 4); food(15, 7, 'b'); food(16, 7, 'c');
-    enemy(20, 11, 'broccoli'); enemy(26, 11, 'cucumber');
+    enemy(20, 11, 'lungi'); enemy(26, 11, 'lathi');
     food(31, 9, 'o'); food(32, 8, 'i'); food(33, 9, 'o');
 
     // 2 — platforms and a tower jump
     ground(34, 60);
     plat(38, 9, 3); line(38, 8, 3, ['i']);
     plat(43, 6, 4); food(44, 5, 'c'); food(45, 5, 'b');
-    enemy(46, 11, 'capsicum'); enemy(51, 11, 'broccoli');
+    enemy(46, 11, 'shawl'); enemy(51, 11, 'lungi');
     stairsUp(55, 4); tower(59, 4); tower(60, 4);
     food(62, 6, 'b');
     ground(64, 92);
@@ -430,16 +430,16 @@
     line(70, 10, 3, ['o', 'i']);
     plat(74, 8, 3); plat(79, 8, 3); plat(84, 8, 3);
     food(75, 7, 'c'); food(85, 7, 'b');
-    enemy(80, 7, 'cucumber'); enemy(77, 11, 'broccoli'); enemy(88, 11, 'capsicum');
+    enemy(80, 7, 'lathi'); enemy(77, 11, 'lungi'); enemy(88, 11, 'shawl');
     plat(94, 9, 2); food(94, 8, 'i'); food(95, 8, 'o');
 
-    // 4 — veggie army
+    // 4 — goon army
     ground(97, 132);
     line(99, 10, 4, ['i', 'o']);
     plat(104, 8, 5); food(105, 7, 'b'); food(107, 7, 'c');
     plat(106, 5, 3); food(107, 4, 'b');
-    enemy(106, 7, 'broccoli');
-    enemy(110, 11, 'broccoli'); enemy(115, 11, 'cucumber'); enemy(120, 11, 'capsicum');
+    enemy(106, 7, 'lungi');
+    enemy(110, 11, 'lungi'); enemy(115, 11, 'lathi'); enemy(120, 11, 'shawl');
     tower(124, 2); tower(128, 3);
     line(125, 8, 3, ['o']);
     food(134, 9, 'c');
@@ -448,13 +448,13 @@
     ground(136, 172);
     plat(139, 9, 3); plat(143, 7, 3); plat(147, 5, 3); plat(151, 7, 3); plat(155, 9, 3);
     food(144, 6, 'i'); food(148, 4, 'b'); food(149, 4, 'c'); food(152, 6, 'o');
-    enemy(148, 4, 'capsicum');
-    enemy(141, 11, 'broccoli'); enemy(150, 11, 'cucumber'); enemy(158, 11, 'broccoli'); enemy(163, 11, 'capsicum');
+    enemy(148, 4, 'shawl');
+    enemy(141, 11, 'lungi'); enemy(150, 11, 'lathi'); enemy(158, 11, 'lungi'); enemy(163, 11, 'shawl');
     line(160, 10, 6, ['i', 'o', 'i', 'o', 'c', 'b']);
 
     // 6 — the final climb to the Ultimate Gift
     ground(176, 219);
-    enemy(182, 11, 'cucumber'); enemy(186, 11, 'broccoli');
+    enemy(182, 11, 'lathi'); enemy(186, 11, 'lungi');
     stairsUp(189, 6); stairsDown(195, 6);
     food(194, 4, 'b'); food(195, 4, 'c');
     line(201, 10, 3, ['b', 'c', 'b']);
@@ -1177,65 +1177,124 @@
     }
   }
 
-  function floret(c, fx, fy, r) {
-    c.fillStyle = radial(c, fx, fy, 0.5, r, [[0, '#86c766'], [0.55, '#2f6e2b'], [1, '#143a16']], fx - r * 0.35, fy - r * 0.4);
-    c.beginPath(); c.arc(fx, fy, r, 0, TAU); c.fill();
-    c.fillStyle = 'rgba(10,40,10,0.35)';
-    for (let i = 0; i < 4; i++) { const a = i * 1.7 + fx; c.beginPath(); c.arc(fx + Math.cos(a) * r * 0.5, fy + Math.sin(a) * r * 0.5, r * 0.18, 0, TAU); c.fill(); }
+  // ---- Enemies: Mental Balayya's goons. Three funny outfits, all with his head:
+  //   lungi  - checked lungi, white banian, chappals, arms flapping
+  //   lathi  - pink kurta-pajama, swinging a lathi over his head
+  //   shawl  - white dhoti and shirt, orange shawl, shaking his fist
+  const SKIN = '#b9784a';
+  function limb(x0, y0, x1, y1, w, col) {
+    ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
   }
+  function hand(x, y, r = 2.6) {
+    ctx.fillStyle = SKIN; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(40,20,10,0.5)'; ctx.lineWidth = 0.7; ctx.stroke();
+  }
+  function belly(fill) {
+    ctx.fillStyle = fill;
+    ctx.beginPath(); ctx.ellipse(0, -20, 12.5, 9.5, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(40,20,10,0.45)'; ctx.lineWidth = 0.8; ctx.stroke();
+  }
+  const ENEMY_ART = 1.5; // art is drawn in a ~38-unit-tall box, scaled 1.5x
 
   function drawEnemy(e) {
-    const x = e.x - camX; if (x < -70 || x > VW + 70) return;
+    const x = e.x - camX; if (x < -80 || x > VW + 80) return;
     const cx = x + e.w / 2, bottom = e.y + e.h;
-    if (!e.dead) drawShadow(cx, bottom, e.w);
+    if (!e.dead) drawShadow(cx, bottom, e.w * 0.8);
+    const t = time * 10 + e.phase;
+    const step = Math.sin(t * 1.2) * 3;
     ctx.save();
     ctx.translate(cx, bottom);
-    const S = e.h / 40;
-    ctx.scale(S, S);
+    ctx.scale(ENEMY_ART, ENEMY_ART);
     if (e.dead) { ctx.scale(1.3, 0.3); ctx.globalAlpha = Math.max(0, e.squash / 0.5); }
-    else ctx.translate(0, -Math.abs(Math.sin(time * 10 + e.phase)) * 1.5);
+    else ctx.translate(0, -Math.abs(Math.sin(t * 1.2)) * 1.6);
     ctx.scale(-e.dir, 1);
+    const sway = e.dead ? 0 : Math.sin(t * 1.2) * 0.09; // the waddle
+    ctx.rotate(sway);
 
-    // legs
-    const step = Math.sin(time * 12 + e.phase) * 3;
-    ctx.strokeStyle = '#122a14'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-6, -8); ctx.lineTo(-7 + step, -1); ctx.moveTo(6, -8); ctx.lineTo(7 - step, -1); ctx.stroke();
-    ctx.fillStyle = '#0d1f0f';
-    ctx.beginPath(); ctx.ellipse(-8 + step, -1, 4, 2, 0, 0, TAU); ctx.ellipse(8 - step, -1, 4, 2, 0, 0, TAU); ctx.fill();
-    ctx.lineCap = 'butt';
+    // chappals
+    ctx.fillStyle = '#5a3220';
+    ctx.beginPath(); ctx.ellipse(-6 + step, -1.2, 5, 1.8, 0, 0, TAU); ctx.ellipse(6 - step, -1.2, 5, 1.8, 0, 0, TAU); ctx.fill();
 
-    let fy, fr;
-    if (e.kind === 'broccoli') {
-      ctx.fillStyle = linear(ctx, -7, 0, 7, 0, [[0, '#6f8f3a'], [0.5, '#c2dd86'], [1, '#5b7a2c']]);
-      ctx.beginPath(); ctx.moveTo(-6, -5); ctx.lineTo(6, -5); ctx.lineTo(4.5, -20); ctx.lineTo(-4.5, -20); ctx.fill();
-      for (const [dx, dy, r] of [[-14, -20, 7], [14, -20, 7], [-11, -29, 10], [11, -29, 10], [0, -35, 11], [-6, -22, 9], [6, -22, 9]]) floret(ctx, dx, dy, r);
-      fy = -27; fr = 16;
-    } else if (e.kind === 'cucumber') {
-      ctx.fillStyle = linear(ctx, -14, 0, 14, 0, [[0, '#0f3013'], [0.35, '#3f8f3c'], [0.6, '#2c6e2c'], [1, '#0d2a10']]);
-      ctx.beginPath(); ctx.ellipse(0, -21, 14, 21, 0, 0, TAU); ctx.fill();
-      ctx.strokeStyle = 'rgba(170,230,150,0.2)'; ctx.lineWidth = 1.5;
-      for (const dx of [-7, 0, 7]) { ctx.beginPath(); ctx.moveTo(dx * 0.6, -40); ctx.quadraticCurveTo(dx * 1.3, -21, dx * 0.6, -2); ctx.stroke(); }
-      ctx.fillStyle = 'rgba(220,255,200,0.45)';
-      for (let i = 0; i < 10; i++) { ctx.beginPath(); ctx.arc(-9 + (i * 7) % 18, -36 + i * 3.4, 0.9, 0, TAU); ctx.fill(); }
-      ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.ellipse(-6, -26, 2.5, 10, 0.1, 0, TAU); ctx.fill();
-      ctx.fillStyle = '#3d5a22'; ctx.fillRect(-1.5, -45, 3, 5);
-      fy = -24; fr = 15.5;
+    if (e.kind === 'lungi') {
+      limb(-5 + step, -7, -6 + step, -2.5, 3.6, SKIN); limb(5 - step, -7, 6 - step, -2.5, 3.6, SKIN);
+      // checked lungi
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(-12, -17); ctx.lineTo(12, -17); ctx.lineTo(13.5, -4.5); ctx.lineTo(-13.5, -4.5); ctx.closePath();
+      ctx.fillStyle = '#1f4fa0'; ctx.fill(); ctx.clip();
+      ctx.strokeStyle = 'rgba(230,50,50,0.8)'; ctx.lineWidth = 1.3;
+      for (let gx = -14; gx <= 14; gx += 4) { ctx.beginPath(); ctx.moveTo(gx, -18); ctx.lineTo(gx, -4); ctx.stroke(); }
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 0.9;
+      for (let gy = -16; gy <= -4; gy += 4) { ctx.beginPath(); ctx.moveTo(-15, gy); ctx.lineTo(15, gy); ctx.stroke(); }
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(4, -18, 10, 14);
+      ctx.restore();
+      ctx.fillStyle = '#f4f1ea'; ctx.fillRect(-13.5, -5.5, 27, 1.4);       // hem
+      ctx.fillStyle = '#163c7a'; ctx.beginPath(); ctx.moveTo(-2, -17); ctx.lineTo(3, -17); ctx.lineTo(1, -10); ctx.fill(); // knot
+      // back arm, banian belly, front arm (flapping)
+      const fl = Math.sin(t * 1.2);
+      limb(-10, -25, -16 - fl * 3, -16 + fl * 4, 4, SKIN); hand(-16 - fl * 3, -16 + fl * 4);
+      belly(radial(ctx, -4, -24, 1, 15, [[0, '#ffffff'], [1, '#d9d4c8']]));
+      ctx.fillStyle = SKIN;
+      ctx.beginPath(); ctx.arc(-9.5, -27, 3.6, 0, TAU); ctx.arc(9.5, -27, 3.6, 0, TAU); ctx.fill(); // bare shoulders
+      ctx.beginPath(); ctx.ellipse(0, -28.5, 4.5, 2.5, 0, 0, Math.PI); ctx.fill();                  // neckline
+      ctx.fillStyle = 'rgba(40,20,10,0.5)';
+      for (const [hx, hy] of [[-10, -28], [-8.5, -26], [10, -28], [8.6, -26]]) ctx.fillRect(hx, hy, 0.7, 0.7);
+      limb(10, -25, 16 + fl * 3, -16 - fl * 4, 4, SKIN); hand(16 + fl * 3, -16 - fl * 4);
+    } else if (e.kind === 'lathi') {
+      limb(-4, -10, -5 + step, -2.5, 5, '#f1ede4'); limb(4, -10, 5 - step, -2.5, 5, '#f1ede4');
+      const sw = Math.sin(t * 0.9);
+      limb(-9, -25, -14 - sw * 2, -15, 4, '#c2255c'); hand(-14 - sw * 2, -14.5);
+      // pink kurta
+      ctx.fillStyle = linear(ctx, -14, 0, 14, 0, [[0, '#a61e4d'], [0.45, '#f06595'], [1, '#a61e4d']]);
+      ctx.beginPath(); ctx.moveTo(-10.5, -29); ctx.lineTo(10.5, -29); ctx.quadraticCurveTo(15, -18, 14.5, -8); ctx.lineTo(-14.5, -8); ctx.quadraticCurveTo(-15, -18, -10.5, -29); ctx.fill();
+      ctx.strokeStyle = 'rgba(60,5,20,0.5)'; ctx.lineWidth = 0.8; ctx.stroke();
+      ctx.strokeStyle = '#f6c453'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(0, -28.5); ctx.lineTo(0, -19); ctx.stroke();
+      ctx.fillStyle = '#f6c453'; for (const by of [-26, -23, -20]) { ctx.beginPath(); ctx.arc(0.8, by, 0.8, 0, TAU); ctx.fill(); }
+      ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.ellipse(-5, -20, 3, 7, 0.2, 0, TAU); ctx.fill();
+      // raised arm swinging a lathi
+      const hx = 13 + sw * 1.5, hy = -36 + Math.abs(sw) * 2;
+      limb(9, -26, hx, hy, 4, '#c2255c');
+      ctx.save(); ctx.translate(hx, hy); ctx.rotate(-0.9 + sw * 0.9);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#3a2210'; ctx.lineWidth = 4.4;
+      ctx.beginPath(); ctx.moveTo(0, 9); ctx.lineTo(0, -28); ctx.stroke();
+      ctx.strokeStyle = '#c98a45'; ctx.lineWidth = 2.8;
+      ctx.beginPath(); ctx.moveTo(0, 9); ctx.lineTo(0, -28); ctx.stroke();
+      ctx.strokeStyle = '#f6c453'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, -23); ctx.lineTo(0, -19); ctx.stroke();
+      ctx.restore();
+      hand(hx, hy);
     } else {
-      const body = radial(ctx, 0, -20, 2, 24, [[0, '#6fd36a'], [0.5, '#2a8f30'], [1, '#0f4f17']], -7, -28);
-      ctx.fillStyle = body;
-      ctx.beginPath(); ctx.arc(-9, -19, 11.5, 0, TAU); ctx.arc(9, -19, 11.5, 0, TAU); ctx.arc(0, -16, 13, 0, TAU);
-      ctx.ellipse(0, -30, 17, 9, 0, 0, TAU); ctx.fill();
-      ctx.strokeStyle = 'rgba(5,40,10,0.45)'; ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.moveTo(-4, -34); ctx.quadraticCurveTo(-5, -18, -3, -5); ctx.moveTo(4, -34); ctx.quadraticCurveTo(5, -18, 3, -5); ctx.stroke();
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.beginPath(); ctx.ellipse(-11, -24, 2.2, 6, 0.25, 0, TAU); ctx.fill();
-      ctx.strokeStyle = '#4d6b25'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(0, -37); ctx.quadraticCurveTo(1, -43, 5, -45); ctx.stroke(); ctx.lineCap = 'butt';
-      fy = -21; fr = 15.5;
+      // white dhoti
+      ctx.fillStyle = linear(ctx, 0, -17, 0, -3, [[0, '#ffffff'], [1, '#ddd8cc']]);
+      ctx.beginPath(); ctx.moveTo(-11.5, -17); ctx.lineTo(11.5, -17); ctx.lineTo(9 - step * 0.5, -3); ctx.lineTo(2, -6.5); ctx.lineTo(-2, -6.5); ctx.lineTo(-9 + step * 0.5, -3); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(120,110,95,0.6)'; ctx.lineWidth = 0.7;
+      ctx.beginPath(); ctx.moveTo(-3, -16); ctx.lineTo(-6, -5); ctx.moveTo(3, -16); ctx.lineTo(6, -5); ctx.stroke();
+      ctx.fillStyle = '#e0a800'; ctx.fillRect(-11.5, -9, 23, 1.2); // border on the dhoti
+      // hand on hip (back)
+      limb(-10, -25, -15, -20, 4, '#f7f4ee'); limb(-15, -20, -11.5, -16, 3.5, SKIN);
+      belly(radial(ctx, -4, -24, 1, 15, [[0, '#ffffff'], [1, '#e1dccf']]));
+      ctx.fillStyle = '#cfc7ba'; for (const by of [-25, -21, -17.5]) { ctx.beginPath(); ctx.arc(0.5, by, 0.8, 0, TAU); ctx.fill(); }
+      // orange shawl draped over the shoulders
+      ctx.fillStyle = linear(ctx, -12, -30, 12, -10, [[0, '#ff922b'], [1, '#d9480f']]);
+      ctx.beginPath();
+      ctx.moveTo(-12, -28); ctx.quadraticCurveTo(0, -32, 12, -28); ctx.lineTo(13, -12); ctx.lineTo(8, -12); ctx.lineTo(8, -24);
+      ctx.quadraticCurveTo(0, -26, -8, -24); ctx.lineTo(-8, -12); ctx.lineTo(-13, -12); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#ffd43b'; ctx.lineWidth = 0.9;
+      ctx.beginPath(); ctx.moveTo(-13, -12.5); ctx.lineTo(-8, -12.5); ctx.moveTo(8, -12.5); ctx.lineTo(13, -12.5); ctx.stroke();
+      // fist shaking in the air
+      const sh = Math.sin(t * 2.2) * 2.5;
+      limb(10, -26, 15, -37 + sh, 4, '#f7f4ee');
+      hand(15.5, -38.5 + sh, 3.4);
     }
+
+    ctx.rotate(-sway);
     ctx.scale(-e.dir, 1); // don't mirror the photo
-    // Mental Balayya's head pokes out of the vegetable
-    drawVeggieFace(ctx, 0, fy - 6, 19);
+    ctx.save();
+    ctx.translate(0, -27);
+    ctx.rotate(e.dead ? 0 : Math.sin(t * 0.6) * 0.09); // head wobble
+    drawVeggieFace(ctx, 0, -11, 16);
+    ctx.restore();
     ctx.restore();
   }
 
@@ -1404,7 +1463,7 @@
     ctx.restore();
   }
 
-  // Big shocked hero face when a villain veggie catches him
+  // Big shocked hero face when a goon catches him
   function drawCaught() {
     if (caughtTimer <= 0) return;
     const age = CAUGHT_TIME - caughtTimer;
