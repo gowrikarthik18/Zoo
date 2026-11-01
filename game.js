@@ -175,7 +175,33 @@
       master.connect(actx.destination);
     }
     if (actx.state === 'suspended') actx.resume();
+    decodeGameOver();
     return actx;
+  }
+
+  // Optional game-over sound: assets/game-over.mp3. Decoded into Web Audio so it can play
+  // without a fresh tap (needed on iPhone). Falls back to the built-in jingle if missing.
+  let gameOverBytes = null, gameOverBuf = null, gameOverEl = null;
+  fetch('assets/game-over.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(b => { gameOverBytes = b; decodeGameOver(); }).catch(() => {
+    const el = new Audio(); el.preload = 'auto';
+    el.addEventListener('canplaythrough', () => { gameOverEl = el; }, { once: true });
+    el.src = 'assets/game-over.mp3';
+  });
+  function decodeGameOver() {
+    if (!actx || gameOverBuf || !gameOverBytes) return;
+    const bytes = gameOverBytes; gameOverBytes = null;
+    actx.decodeAudioData(bytes, buf => { gameOverBuf = buf; }, () => {});
+  }
+  function playGameOverSound() {
+    if (muted) return;
+    const a = audio();
+    if (a && gameOverBuf) {
+      const src = a.createBufferSource(); src.buffer = gameOverBuf;
+      const g = a.createGain(); g.gain.value = 1.2;
+      src.connect(g).connect(master); src.start();
+    } else if (gameOverEl) {
+      gameOverEl.currentTime = 0; gameOverEl.play().catch(() => sfx.lose());
+    } else sfx.lose();
   }
 
   let burpFile = null; // optional assets/burp.mp3
@@ -608,7 +634,7 @@
     sfx.hurt();
     if (lives <= 0) {
       state = 'over';
-      sfx.lose();
+      playGameOverSound();
       document.getElementById('overStats').innerHTML = `Score <b>${score.toLocaleString()}</b> &nbsp;·&nbsp; Food eaten <b>${eaten}</b>`;
       showOnly('overScreen');
       return;
