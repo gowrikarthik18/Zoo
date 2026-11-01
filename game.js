@@ -18,7 +18,7 @@
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
   // ------------------------------------------------------------------ Faces
-  const faceImg = { hero: null, veggie: null }; // square canvases
+  const faceImg = { hero: null, veggie: null, caught: null }; // square canvases
 
   function loadImage(src) {
     return new Promise(res => {
@@ -28,12 +28,12 @@
       img.src = src;
     });
   }
-  function toSquare(img, size = 256) {
+  function toSquare(img, zoom = 0.8, size = 256) {
     const cv = document.createElement('canvas');
     cv.width = cv.height = size;
     const g = cv.getContext('2d');
     const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
-    const s = Math.min(w, h) * 0.8;  // zoom in a little on the face
+    const s = Math.min(w, h) * zoom;  // zoom in a little on the face
     const sx = (w - s) / 2;
     const sy = (h - s) * 0.35; // portraits: faces usually sit a bit above center
     g.drawImage(img, sx, sy, s, s, 0, 0, size, size);
@@ -43,11 +43,11 @@
     const stored = localStorage.getItem('burphero_face_' + kind);
     if (stored) {
       const img = await loadImage(stored);
-      if (img) { faceImg[kind] = toSquare(img); return; }
+      if (img) { faceImg[kind] = toSquare(img, 1); return; } // already cropped when uploaded
     }
     for (const ext of ['png', 'jpg', 'jpeg', 'webp', 'PNG', 'JPG', 'JPEG']) {
       const img = await loadImage(`assets/${kind}-face.${ext}`);
-      if (img) { faceImg[kind] = toSquare(img); return; }
+      if (img) { faceImg[kind] = toSquare(img, 1); return; } // asset files are pre-cropped
     }
     faceImg[kind] = null;
   }
@@ -75,12 +75,14 @@
     c.restore();
     c.beginPath(); c.arc(cx, cy, r, 0, TAU);
     c.lineWidth = Math.max(1.5, r * 0.12);
-    c.strokeStyle = kind === 'hero' ? '#5a2a10' : '#1b4d12';
+    c.strokeStyle = kind === 'veggie' ? '#1b4d12' : '#5a2a10';
     c.stroke();
     return true;
   }
 
-  function drawHeroFace(c, cx, cy, r, dir) {
+  // kind 'caught' = shocked face shown when a villain catches the hero (falls back to the normal face)
+  function drawHeroFace(c, cx, cy, r, dir, kind = 'hero') {
+    if (kind === 'caught' && drawPhotoFace(c, 'caught', cx, cy, r)) return;
     if (drawPhotoFace(c, 'hero', cx, cy, r)) return;
     // cartoon fallback
     c.fillStyle = '#f1c27d';
@@ -922,7 +924,7 @@
     }
     ctx.fill();
     ctx.lineWidth = 4; ctx.strokeStyle = '#e65100'; ctx.stroke();
-    drawHeroFace(ctx, 0, 0, r, 1);
+    drawHeroFace(ctx, 0, 0, r, 1, 'caught');
     ctx.font = 'bold 44px "Trebuchet MS", sans-serif'; ctx.textAlign = 'center';
     ctx.lineWidth = 7; ctx.strokeStyle = '#3a1a08';
     ctx.strokeText('CAUGHT!', 0, r + 62); ctx.fillStyle = '#ff5252'; ctx.fillText('CAUGHT!', 0, r + 62);
@@ -961,13 +963,13 @@
   document.getElementById('resetFaces').onclick = async () => {
     localStorage.removeItem('burphero_face_hero');
     localStorage.removeItem('burphero_face_veggie');
-    await Promise.all([loadFace('hero'), loadFace('veggie')]);
+    await Promise.all([loadFace('hero'), loadFace('veggie'), loadFace('caught')]);
     drawPreviews();
   };
 
   buildLevel();
   player = newPlayer();
   drawPreviews();
-  Promise.all([loadFace('hero'), loadFace('veggie')]).then(drawPreviews);
+  Promise.all([loadFace('hero'), loadFace('veggie'), loadFace('caught')]).then(drawPreviews);
   requestAnimationFrame(frame);
 })();
