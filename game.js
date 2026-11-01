@@ -192,7 +192,7 @@
     const bytes = gameOverBytes; gameOverBytes = null;
     actx.decodeAudioData(bytes, buf => { gameOverBuf = buf; }, () => {});
   }
-  function playGameOverSound() {
+  function playGameOverSound(fallback = () => sfx.lose()) {
     if (muted) return;
     const a = audio();
     if (a && gameOverBuf) {
@@ -200,8 +200,8 @@
       const g = a.createGain(); g.gain.value = 1.2;
       src.connect(g).connect(master); src.start();
     } else if (gameOverEl) {
-      gameOverEl.currentTime = 0; gameOverEl.play().catch(() => sfx.lose());
-    } else sfx.lose();
+      gameOverEl.currentTime = 0; gameOverEl.play().catch(fallback);
+    } else fallback();
   }
 
   let burpFile = null; // optional assets/burp.mp3
@@ -631,7 +631,10 @@
     lives--;
     if (reason === 'hit') caughtTimer = CAUGHT_TIME;
     shake = 12;
-    sfx.hurt();
+    if (lives > 0) {
+      if (reason === 'hit') playGameOverSound(() => sfx.hurt()); // same sound when a villain catches him
+      else sfx.hurt();
+    }
     if (lives <= 0) {
       state = 'over';
       playGameOverSound();
@@ -1379,11 +1382,11 @@
     ctx.fillStyle = '#f5efe6'; ctx.beginPath(); ctx.arc(0, 0, r + 4, 0, TAU); ctx.fill(); ctx.restore();
     drawHeroFace(ctx, 0, 0, r, 1, 'caught');
     ctx.textAlign = 'center';
-    ctx.font = `72px ${FONT_DISPLAY}`;
-    if ('letterSpacing' in ctx) ctx.letterSpacing = '8px';
+    ctx.font = `66px ${FONT_DISPLAY}`;
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '5px';
     ctx.shadowColor = 'rgba(255,40,40,0.9)'; ctx.shadowBlur = 22;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('CAUGHT', 4, r + 74);
+    ctx.fillText('SAVE ME THATHA!', 2, r + 72);
     ctx.restore();
   }
 

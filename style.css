@@ -126,3 +126,5 @@ kbd {
 #touch button.tsmall { font: 400 26px var(--display); letter-spacing: 2px; width: 96px; height: 96px; }
 #touch button[data-key="jump"] { width: 150px; height: 150px; font-size: 54px; }
 #touch button.on { background: rgba(255, 214, 140, 0.25); }
+
+.overTitle { font-size: 50px !important; line-height: 1 !important; max-width: 520px; margin-left: auto; margin-right: auto; }
