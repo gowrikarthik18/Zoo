@@ -34,4 +34,10 @@ There are two ways to add faces:
 2. **As files:** put the photos in `assets/` as `hero-face.jpg` and `veggie-face.jpg`
    (`.png` and `.webp` also work).
 
+The game already includes `assets/hero-face.jpg` (the hero), `assets/veggie-face.jpg` (the villain veggies)
+and `assets/game-over.jpg` (shown on the Game Over screen). If you upload photos in the game, they take
+priority over these files. Click **reset faces** on the title screen to go back to the files.
+
+When a villain veggie catches the hero, a big shocked version of his face pops up with "CAUGHT!".
+
 Optional: add `assets/burp.mp3` to replace the built-in burp sound.

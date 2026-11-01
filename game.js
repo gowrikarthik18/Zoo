@@ -449,7 +449,7 @@
 
   // ------------------------------------------------------------------ State
   let state = 'title';
-  let player, camX = 0, score = 0, eaten = 0, lives = 3, time = 0, winTimer = 0;
+  let player, camX = 0, score = 0, eaten = 0, lives = 3, time = 0, winTimer = 0, caughtTimer = 0;
   let particles = [], texts = [];
   const clouds = Array.from({ length: 14 }, (_, i) => ({ x: i * 260 + Math.random() * 120, y: 40 + Math.random() * 120, s: 0.7 + Math.random() * 0.6 }));
 
@@ -465,7 +465,7 @@
     audio();
     buildLevel();
     player = newPlayer();
-    camX = 0; score = 0; eaten = 0; lives = 3; time = 0; winTimer = 0;
+    camX = 0; score = 0; eaten = 0; lives = 3; time = 0; winTimer = 0; caughtTimer = 0;
     particles = []; texts = [];
     state = 'play';
     showOnly(null);
@@ -491,6 +491,7 @@
 
   function loseLife(reason) {
     lives--;
+    if (reason === 'hit') caughtTimer = CAUGHT_TIME;
     sfx.hurt();
     if (lives <= 0) {
       state = 'over';
@@ -543,6 +544,7 @@
       if (solid(l, row) && solid(r, row)) { p.lastSafe.x = p.x; p.lastSafe.y = p.y; }
     }
     if (p.invuln > 0) p.invuln -= dt;
+    if (caughtTimer > 0) caughtTimer -= dt;
     if (p.y > ROWS * T + 80) { loseLife('pit'); if (state !== 'play') return; }
 
     // food
@@ -843,7 +845,7 @@
     ctx.fillStyle = '#b3361f'; ctx.beginPath(); ctx.arc(cx + 2 * p.face, by + 2, 2, 0, TAU); ctx.fill(); // belly button
 
     // head (photo face)
-    drawHeroFace(ctx, cx, p.y + 9, 18, p.face);
+    drawHeroFace(ctx, cx, p.y + 7, 20, p.face);
   }
 
   function drawFx() {
@@ -897,6 +899,34 @@
     drawPlayer();
     drawFx();
     drawHUD();
+    drawCaught();
+  }
+
+  // Big shocked hero face when a villain veggie catches him
+  const CAUGHT_TIME = 1.3;
+  function drawCaught() {
+    if (caughtTimer <= 0) return;
+    const age = CAUGHT_TIME - caughtTimer;
+    const pop = Math.min(1, age * 7);
+    const r = 80 * (pop < 1 ? pop * 1.15 : 1);
+    const shake = Math.sin(age * 70) * 7 * Math.max(0, 1 - age);
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, caughtTimer * 3);
+    // burst behind the face
+    ctx.translate(VW / 2 + shake, 200);
+    ctx.fillStyle = '#ffeb3b';
+    ctx.beginPath();
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * TAU + age, rr = i % 2 ? r * 1.25 : r * 1.6;
+      ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = '#e65100'; ctx.stroke();
+    drawHeroFace(ctx, 0, 0, r, 1);
+    ctx.font = 'bold 44px "Trebuchet MS", sans-serif'; ctx.textAlign = 'center';
+    ctx.lineWidth = 7; ctx.strokeStyle = '#3a1a08';
+    ctx.strokeText('CAUGHT!', 0, r + 62); ctx.fillStyle = '#ff5252'; ctx.fillText('CAUGHT!', 0, r + 62);
+    ctx.restore();
   }
 
   // ------------------------------------------------------------------ Loop
