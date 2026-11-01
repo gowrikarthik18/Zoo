@@ -4,7 +4,8 @@
  * Heads (cut out of the photos) live in assets/: hero-head.png (Basha Bhai),
  * caught-head.png (his shocked face) and villain-head.png (Mental Balayya).
  * game-over.jpg is shown on the Game Over screen.
- * Sounds: fart.mp3 (eating and caught), game-over.mp3 (game over). Background music is synthesized.
+ * Sounds: burp.mp3 (eating, stomping), fart.mp3 (touched by a goon), game-over.mp3 (game over).
+ * Background music is synthesized.
  */
 (() => {
   'use strict';
@@ -135,7 +136,7 @@
 
   // Sound clips from assets/. Decoded into Web Audio so they can play without a fresh tap
   // (needed on iPhone). Each falls back to a built-in sound if its file is missing.
-  //   game-over.mp3 -> game over      fart.mp3 -> eating, and when a goon catches the hero
+  //   game-over.mp3 -> game over   fart.mp3 -> a goon touches the hero   burp.mp3 -> eating, stomping
   const samples = {};
   function loadSample(name, url) {
     const s = samples[name] = { bytes: null, buf: null, el: null };
@@ -165,8 +166,8 @@
     } else fallback();
   }
   loadSample('gameover', 'assets/game-over.mp3');
-  loadSample('fart', 'assets/fart.mp3');   // eating and when a goon catches him
-  loadSample('burp', 'assets/burp.mp3');   // one celebratory burp when he enters the compound
+  loadSample('fart', 'assets/fart.mp3');   // when a goon touches/catches him
+  loadSample('burp', 'assets/burp.mp3');   // eating, stomping a goon, and entering the compound
 
   function synthBurp() {
     const a = audio(); if (!a || muted) return;
@@ -214,9 +215,10 @@
     const n = a.createBufferSource(); n.buffer = noiseBuf; n.loop = true;
     return n;
   }
-  // Eating: only the fart clip, with a slightly different pitch each bite
+  // Eating and stomping a goon: the burp clip, slightly different pitch each time.
+  // (Touching a goon plays the fart clip, see loseLife.)
   function eatSound() {
-    playSample('fart', () => {}, 1.1, 0.9 + Math.random() * 0.25);
+    playSample('burp', () => {}, 1.1, 0.9 + Math.random() * 0.2);
   }
 
   // ------------------------------------------------------------------ Background music
@@ -727,7 +729,7 @@
           p.vy = keys.jump ? -720 : -460;
           score += 200;
           shake = 5;
-          sfx.stomp();
+          playSample('burp', () => sfx.stomp(), 1.1, 0.8 + Math.random() * 0.2);
           addText(e.x + e.w / 2, e.y - 6, '+200  SQUASHED', 'info');
           burst(e.x + e.w / 2, e.y + e.h / 2, ['#2f7a2c', '#6fbf5a', '#a5d6a7', '#1b4d1b'], 18, 230);
         } else if (p.invuln <= 0) {
