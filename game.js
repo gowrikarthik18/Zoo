@@ -19,8 +19,8 @@
   const GRAV = 2000, MAXFALL = 1000;
   // Hero movement tuning (pixels; one block = 40px)
   const MOVE = {
-    walk: 175,        // walking speed
-    run: 255,         // speed while RUN is held
+    walk: 200,        // walking speed
+    run: 285,         // speed while RUN is held
     accelGround: 1500,
     accelAir: 1100,
     brakeGround: 2400, // stops quickly, no ice-skating
@@ -123,7 +123,7 @@
     c.save();
     c.beginPath(); c.arc(cx, cy, r, 0, TAU); c.clip();
     c.drawImage(img, cx - r, cy - r, r * 2, r * 2);
-    c.fillStyle = radial(c, cx, cy, r * 0.55, r, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.38)']]);
+    c.fillStyle = radial(c, cx, cy, r * 0.75, r, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.14)']]);
     c.fillRect(cx - r, cy - r, r * 2, r * 2);
     c.restore();
     c.beginPath(); c.arc(cx, cy, r, 0, TAU);
@@ -464,7 +464,7 @@
     const food = (col, row, type) => foods.push({ x: col * T + T / 2, y: row * T + T / 2, type, phase: Math.random() * TAU, got: false });
     const line = (col, row, n, types) => { for (let i = 0; i < n; i++) food(col + i, row, types[i % types.length]); };
     const enemy = (col, row, kind) => enemies.push({
-      kind, x: col * T - 4, y: (row + 1) * T - 50, w: 46, h: 50,
+      kind, x: col * T - 7, y: (row + 1) * T - 60, w: 54, h: 60,
       vx: 0, vy: 0, dir: -1, speed: 55 + Math.random() * 20, onGround: false,
       dead: false, squash: 0, gone: false, phase: Math.random() * TAU,
     });
@@ -598,7 +598,7 @@
   let state = 'title';
   let player, camX = 0, score = 0, eaten = 0, lives = 3, time = 0, winTimer = 0, caughtTimer = 0, shake = 0;
   let particles = [], texts = [];
-  const CAUGHT_TIME = 1.9;
+  const CAUGHT_TIME = 1.8;
 
   function newPlayer() {
     return {
@@ -618,26 +618,14 @@
     showOnly(null);
   }
 
-  // Split a heading into letters that drop in one after another, then wave (see style.css)
-  function animateTitle(el) {
-    const text = el.dataset.text || el.textContent;
-    el.dataset.text = text;
-    el.innerHTML = '';
-    let i = 0;
-    text.split(' ').forEach((word, wi) => {
-      if (wi) el.appendChild(document.createTextNode(' '));
-      const w = document.createElement('span'); w.className = 'word';
-      for (const ch of word) {
-        const c = document.createElement('span');
-        c.className = 'ch'; c.textContent = ch;
-        c.style.setProperty('--d', `${0.25 + i * 0.045}s`);
-        c.style.setProperty('--w', `${i * 0.12}s`);
-        w.appendChild(c); i++;
-      }
-      el.appendChild(w);
-    });
-    const img = document.getElementById('overImg');
-    img.classList.remove('pop'); void img.offsetWidth; img.classList.add('pop');
+  // Game Over title, drawn with the same title template into a canvas in the panel
+  function drawOverTitle() {
+    const cv = document.getElementById('overTitle');
+    const g = cv.getContext('2d');
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, cv.width, cv.height);
+    g.scale(2, 2);
+    drawTitleTemplate(g, ['CHAALA AMATEURISH GA', 'AADAV BIDDA'], cv.width / 4, cv.height / 4 + 2, 54, cv.width / 2 - 40);
   }
 
   const screens = ['titleScreen', 'pauseScreen', 'overScreen', 'winScreen'];
@@ -671,7 +659,9 @@
     if (lives <= 0) {
       state = 'over';
       playSample('gameover', () => sfx.lose());
-      animateTitle(document.getElementById('overTitle'));
+      drawOverTitle();
+      const img = document.getElementById('overImg');
+      img.classList.remove('pop'); void img.offsetWidth; img.classList.add('pop');
       document.getElementById('overStats').innerHTML = `Score <b>${score.toLocaleString()}</b> &nbsp;·&nbsp; Food eaten <b>${eaten}</b>`;
       showOnly('overScreen');
       return;
@@ -737,9 +727,7 @@
         eaten++;
         score += FOOD[f.type].pts;
         p.fat = 1 + Math.min(0.45, eaten * 0.015);
-        const snd = eatSound();
-        addText(f.x, fy - 14, snd === 'burp' ? 'BURRRP!' : 'PRRRRT!', 'burp');
-        addText(f.x, fy + 10, `+${FOOD[f.type].pts}  ${FOOD[f.type].name}`, 'info');
+        eatSound();
         burst(f.x, fy, ['#ffe39a', '#ffb347', '#fff6dc'], 14, 170, 300, true);
       }
     }
@@ -1204,7 +1192,7 @@
       ctx.fillStyle = linear(ctx, -7, 0, 7, 0, [[0, '#6f8f3a'], [0.5, '#c2dd86'], [1, '#5b7a2c']]);
       ctx.beginPath(); ctx.moveTo(-6, -5); ctx.lineTo(6, -5); ctx.lineTo(4.5, -20); ctx.lineTo(-4.5, -20); ctx.fill();
       for (const [dx, dy, r] of [[-14, -20, 7], [14, -20, 7], [-11, -29, 10], [11, -29, 10], [0, -35, 11], [-6, -22, 9], [6, -22, 9]]) floret(ctx, dx, dy, r);
-      fy = -26; fr = 13;
+      fy = -27; fr = 16;
     } else if (e.kind === 'cucumber') {
       ctx.fillStyle = linear(ctx, -14, 0, 14, 0, [[0, '#0f3013'], [0.35, '#3f8f3c'], [0.6, '#2c6e2c'], [1, '#0d2a10']]);
       ctx.beginPath(); ctx.ellipse(0, -21, 14, 21, 0, 0, TAU); ctx.fill();
@@ -1214,7 +1202,7 @@
       for (let i = 0; i < 10; i++) { ctx.beginPath(); ctx.arc(-9 + (i * 7) % 18, -36 + i * 3.4, 0.9, 0, TAU); ctx.fill(); }
       ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.ellipse(-6, -26, 2.5, 10, 0.1, 0, TAU); ctx.fill();
       ctx.fillStyle = '#3d5a22'; ctx.fillRect(-1.5, -45, 3, 5);
-      fy = -23; fr = 12.5;
+      fy = -24; fr = 15.5;
     } else {
       const body = radial(ctx, 0, -20, 2, 24, [[0, '#6fd36a'], [0.5, '#2a8f30'], [1, '#0f4f17']], -7, -28);
       ctx.fillStyle = body;
@@ -1226,7 +1214,7 @@
       ctx.beginPath(); ctx.ellipse(-11, -24, 2.2, 6, 0.25, 0, TAU); ctx.fill();
       ctx.strokeStyle = '#4d6b25'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(0, -37); ctx.quadraticCurveTo(1, -43, 5, -45); ctx.stroke(); ctx.lineCap = 'butt';
-      fy = -19; fr = 12.5;
+      fy = -21; fr = 15.5;
     }
     ctx.scale(-e.dir, 1); // don't mirror the photo
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
@@ -1307,10 +1295,10 @@
     ctx.restore();
 
     // head
-    const hx = cx + Math.sin(lean) * 47, hy = p.y + 7;
+    const hx = cx + Math.sin(lean) * 52, hy = p.y + 2;
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 2;
-    ctx.fillStyle = '#140d08'; ctx.beginPath(); ctx.arc(hx, hy, 20.5, 0, TAU); ctx.fill(); ctx.restore();
-    drawHeroFace(ctx, hx, hy, 20, p.face);
+    ctx.fillStyle = '#140d08'; ctx.beginPath(); ctx.arc(hx, hy, 27.5, 0, TAU); ctx.fill(); ctx.restore();
+    drawHeroFace(ctx, hx, hy, 27, p.face);
   }
 
   function drawFx() {
@@ -1417,67 +1405,91 @@
     ctx.fillStyle = '#f5efe6'; ctx.beginPath(); ctx.arc(0, 0, r + 4, 0, TAU); ctx.fill(); ctx.restore();
     drawHeroFace(ctx, 0, 0, r, 1, 'caught');
     ctx.restore();
-    drawShoutText('KAAPAADU THATHAAA!', VW / 2 + sh * 0.5, 210 + 82 + 58, 70, age, a);
+    drawCaughtCaption(VW / 2, 210 + 82 + 64, a);
   }
 
-  const easeOutBack = x => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * (x - 1) ** 3 + c1 * (x - 1) ** 2; };
+  // Static "movie title" text template: gold metallic face, deep 3D extrusion,
+  // dark outline + bevel rim, and a lens-flare sparkle. Used for the caught popup
+  // and the Game Over title.
+  const FONT_TITLE = '"Anton", "Bebas Neue", Impact, sans-serif';
+  function drawTitleTemplate(c, lines, cx, cy, size, maxW, opts = {}) {
+    const lh = size * (opts.lineHeight || 1.08);
+    c.save();
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; c.miterLimit = 2;
+    if ('letterSpacing' in c) c.letterSpacing = `${Math.round(size * 0.03)}px`;
+    // shrink to fit the widest line
+    c.font = `${size}px ${FONT_TITLE}`;
+    const widest = Math.max(...lines.map(l => c.measureText(l).width));
+    if (widest > maxW) { size *= maxW / widest; c.font = `${size}px ${FONT_TITLE}`; }
+    const depth = Math.max(4, Math.round(size * 0.1));
+    const top = cy - (lines.length - 1) * lh / 2;
+    lines.forEach((line, i) => {
+      const y = top + i * lh;
+      // drop shadow + extrusion
+      c.save();
+      c.shadowColor = 'rgba(0,0,0,0.6)'; c.shadowBlur = size * 0.25; c.shadowOffsetY = size * 0.12;
+      c.fillStyle = '#1a0603';
+      c.fillText(line, cx + depth, y + depth);
+      c.restore();
+      for (let d = depth; d >= 1; d--) {
+        const k = d / depth;
+        c.fillStyle = `rgb(${Math.round(110 - 70 * k)},${Math.round(28 - 18 * k)},${Math.round(10 - 6 * k)})`;
+        c.fillText(line, cx + d * 0.6, y + d);
+      }
+      // outline + bevel rim
+      c.lineWidth = size * 0.12; c.strokeStyle = '#120402'; c.strokeText(line, cx, y);
+      c.lineWidth = size * 0.055;
+      c.strokeStyle = linear(c, 0, y - size / 2, 0, y + size / 2, [[0, '#fff3c4'], [0.5, '#a8681a'], [1, '#f0c45e']]);
+      c.strokeText(line, cx, y);
+      // metallic face with a hard horizon
+      c.fillStyle = linear(c, 0, y - size * 0.5, 0, y + size * 0.5, [
+        [0, '#fffdf0'], [0.3, '#ffe28a'], [0.49, '#f2b440'], [0.5, '#9a5a12'], [0.62, '#c47f22'], [0.85, '#f6c95c'], [1, '#fff1b8'],
+      ]);
+      c.fillText(line, cx, y);
+      // top shine
+      c.save();
+      c.globalCompositeOperation = 'source-atop';
+      c.fillStyle = linear(c, 0, y - size * 0.5, 0, y - size * 0.1, [[0, 'rgba(255,255,255,0.55)'], [1, 'rgba(255,255,255,0)']]);
+      c.fillText(line, cx, y);
+      c.restore();
+      if (i === 0 && opts.sparkle !== false) {
+        const w = c.measureText(line).width;
+        sparkle(c, cx + w / 2 + size * 0.12, y - size * 0.5, size * 0.45);
+      }
+    });
+    c.restore();
+  }
+  function sparkle(c, x, y, s) {
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    c.fillStyle = radial(c, x, y, 0, s * 0.6, [[0, 'rgba(255,250,220,0.9)'], [0.3, 'rgba(255,220,140,0.35)'], [1, 'rgba(255,200,120,0)']]);
+    c.beginPath(); c.arc(x, y, s * 0.6, 0, TAU); c.fill();
+    c.fillStyle = 'rgba(255,252,235,0.95)';
+    for (const [w, h] of [[s, s * 0.06], [s * 0.06, s * 0.8]]) {
+      c.beginPath(); c.ellipse(x, y, w, h, 0, 0, TAU); c.fill();
+    }
+    c.restore();
+  }
 
-  // Animated shout: a ribbon sweeps in, letters pop in one by one with overshoot,
-  // then keep wobbling on a wave with a hot glow.
-  function drawShoutText(text, x, y, size, age, alpha = 1) {
-    const chars = [...text];
+  // Caught popup caption: the title template on a dark lower-third plate with gold rules
+  function drawCaughtCaption(x, y, alpha) {
+    const text = 'KAAPAADU THATHAAA!';
+    const size = 64, pw = 720, ph = 104;
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.font = `${size}px ${FONT_DISPLAY}`;
-    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
-    const gap = size * 0.07;
-    const widths = chars.map(ch => ch === ' ' ? size * 0.28 : ctx.measureText(ch).width);
-    const total = widths.reduce((s, w) => s + w, 0) + gap * (chars.length - 1);
-
-    // ribbon
-    const rw = (total + size * 1.3) * easeOutBack(Math.min(1, age * 4));
-    const rh = size * 1.08;
+    ctx.translate(x, y);
     ctx.save();
-    ctx.translate(x, y + size * 0.04);
-    ctx.rotate(-0.035);
-    ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6;
-    ctx.fillStyle = linear(ctx, 0, -rh / 2, 0, rh / 2, [[0, '#c4161f'], [0.5, '#7d0b12'], [1, '#4a0509']]);
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 8;
+    ctx.fillStyle = linear(ctx, 0, -ph / 2, 0, ph / 2, [[0, 'rgba(70,6,10,0.95)'], [1, 'rgba(25,2,5,0.95)']]);
     ctx.beginPath();
-    ctx.moveTo(-rw / 2 - 18, -rh / 2); ctx.lineTo(rw / 2 + 18, -rh / 2); ctx.lineTo(rw / 2, 0); ctx.lineTo(rw / 2 + 18, rh / 2);
-    ctx.lineTo(-rw / 2 - 18, rh / 2); ctx.lineTo(-rw / 2, 0); ctx.closePath(); ctx.fill();
-    ctx.shadowColor = 'transparent';
-    ctx.fillStyle = linear(ctx, -rw / 2, 0, rw / 2, 0, [[0, '#a8701a'], [0.5, '#fff0b0'], [1, '#a8701a']]);
-    ctx.fillRect(-rw / 2 - 4, -rh / 2 + 4, rw + 8, 2.5);
-    ctx.fillRect(-rw / 2 - 4, rh / 2 - 6.5, rw + 8, 2.5);
-    // moving shine across the ribbon
-    const sx = ((age * 1.2) % 1.4 - 0.2) * rw - rw / 2;
-    ctx.fillStyle = linear(ctx, sx - 40, 0, sx + 40, 0, [[0, 'rgba(255,255,255,0)'], [0.5, 'rgba(255,230,200,0.22)'], [1, 'rgba(255,255,255,0)']]);
-    ctx.fillRect(-rw / 2, -rh / 2, rw, rh);
+    ctx.moveTo(-pw / 2 + 26, -ph / 2); ctx.lineTo(pw / 2, -ph / 2); ctx.lineTo(pw / 2 - 26, ph / 2); ctx.lineTo(-pw / 2, ph / 2); ctx.closePath();
+    ctx.fill();
     ctx.restore();
-
-    // letters
-    let cx = x - total / 2;
-    chars.forEach((ch, i) => {
-      const w = widths[i];
-      const t = age - 0.12 - i * 0.04;
-      if (ch !== ' ' && t > 0) {
-        const pop = t < 0.3 ? Math.max(0.01, easeOutBack(t / 0.3)) : 1;
-        const wave = Math.sin(age * 8 - i * 0.6) * size * 0.06;
-        const rot = Math.sin(age * 6 + i * 1.7) * 0.07;
-        ctx.save();
-        ctx.translate(cx + w / 2, y + wave - (1 - Math.min(1, t / 0.3)) * 30);
-        ctx.rotate(rot);
-        ctx.scale(pop, pop);
-        ctx.lineWidth = size * 0.17; ctx.strokeStyle = '#1f0303';
-        ctx.strokeText(ch, 0, 0);
-        ctx.shadowColor = 'rgba(255,60,30,0.85)'; ctx.shadowBlur = 16 + Math.sin(age * 10) * 6;
-        ctx.fillStyle = linear(ctx, 0, -size * 0.45, 0, size * 0.45, [[0, '#fffbe6'], [0.45, '#ffd54a'], [1, '#ff6a1f']]);
-        ctx.fillText(ch, 0, 0);
-        ctx.restore();
-      }
-      cx += w + gap;
-    });
+    const gold = linear(ctx, -pw / 2, 0, pw / 2, 0, [[0, 'rgba(168,112,26,0)'], [0.2, '#e2a83b'], [0.5, '#fff0b0'], [0.8, '#e2a83b'], [1, 'rgba(168,112,26,0)']]);
+    ctx.fillStyle = gold;
+    ctx.fillRect(-pw / 2 + 20, -ph / 2 + 6, pw - 40, 2);
+    ctx.fillRect(-pw / 2 + 20, ph / 2 - 8, pw - 40, 2);
+    drawTitleTemplate(ctx, [text], 0, 2, size, pw - 90);
     ctx.restore();
   }
 
@@ -1548,6 +1560,7 @@
   Promise.all([loadFace('hero'), loadFace('veggie'), loadFace('caught')]).then(drawPreviews);
   if (document.fonts && document.fonts.load) {
     document.fonts.load(`30px ${FONT_DISPLAY}`).catch(() => {});
+    document.fonts.load(`60px ${FONT_TITLE}`).then(() => { if (state === 'over') drawOverTitle(); }).catch(() => {});
   }
   requestAnimationFrame(frame);
 })();

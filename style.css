@@ -127,45 +127,10 @@ kbd {
 #touch button[data-key="jump"] { width: 150px; height: 150px; font-size: 54px; }
 #touch button.on { background: rgba(255, 214, 140, 0.25); }
 
-/* Game-over title: letters drop in one by one, then keep waving with a hot glow */
-.overTitle {
-  font-size: 54px !important; line-height: 1.02 !important; max-width: 540px; margin: 0 auto;
-  background: none !important; color: #fff !important; -webkit-background-clip: border-box !important; background-clip: border-box !important;
-  filter: none !important; animation: titleShake 0.5s ease 0.2s;
-}
-.overTitle .word { display: inline-block; white-space: nowrap; }
-.overTitle .ch {
-  display: inline-block;
-  background: linear-gradient(180deg, #fffbe6 0%, #ffd54a 45%, #ff5a1f 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  -webkit-text-stroke: 1.5px rgba(60, 5, 5, 0.9);
-  filter: drop-shadow(0 3px 0 #3a0505) drop-shadow(0 0 14px rgba(255, 70, 30, 0.6));
-  opacity: 0;
-  animation: chDrop 0.55s cubic-bezier(.2, 1.6, .4, 1) var(--d) forwards,
-             chWave 1.8s ease-in-out calc(var(--d) + 0.6s + var(--w)) infinite;
-}
-@keyframes chDrop {
-  0%   { opacity: 0; transform: translateY(-70px) scale(1.8) rotate(-14deg); }
-  60%  { opacity: 1; transform: translateY(6px) scale(0.92) rotate(3deg); }
-  100% { opacity: 1; transform: none; }
-}
-@keyframes chWave {
-  0%, 100% { opacity: 1; transform: translateY(0) rotate(0deg); }
-  50%      { opacity: 1; transform: translateY(-6px) rotate(-3deg); }
-}
-@keyframes titleShake {
-  0%, 100% { transform: none; }
-  20% { transform: translateX(-8px) rotate(-1deg); }
-  40% { transform: translateX(7px) rotate(1deg); }
-  60% { transform: translateX(-5px); }
-  80% { transform: translateX(3px); }
-}
-#overImg.pop { animation: imgPop 0.7s cubic-bezier(.2, 1.5, .4, 1) 0.9s both, imgSway 3s ease-in-out 1.6s infinite; }
+/* Game-over title: drawn on a canvas with the gold movie-title template (see game.js) */
+#overTitle { display: block; width: 540px; height: 135px; margin: -6px auto 0; }
+#overImg.pop { animation: imgPop 0.45s cubic-bezier(.2, 1.4, .4, 1) both; }
 @keyframes imgPop {
-  0%   { opacity: 0; transform: scale(0.3) rotate(-12deg); }
+  0%   { opacity: 0; transform: scale(0.7); }
   100% { opacity: 1; transform: none; }
-}
-@keyframes imgSway {
-  0%, 100% { transform: rotate(-1.5deg); }
-  50%      { transform: rotate(1.5deg) scale(1.02); }
 }

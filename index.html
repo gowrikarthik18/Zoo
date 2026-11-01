@@ -6,7 +6,7 @@
   <title>Burp Hero: The Great Feast Run</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -63,7 +63,7 @@
     <!-- Game over -->
     <div class="overlay hidden danger" id="overScreen">
       <div class="panel">
-        <h1 class="overTitle" id="overTitle">Chaala amateurish ga aadav bidda</h1>
+        <canvas id="overTitle" width="1080" height="270" aria-label="Chaala amateurish ga aadav bidda"></canvas>
         <img id="overImg" src="assets/game-over.jpg" alt="" onerror="this.style.display='none'" />
         <p class="stats" id="overStats"></p>
         <button class="btn big" id="retryBtn">Try Again</button>
