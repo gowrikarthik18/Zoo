@@ -36,7 +36,7 @@ Reaching the Compound Gate gives a 5000 bonus, plus bonuses for time and remaini
 The heads were cut out of the original photos (face and hair, transparent background).
 The goal: help Basha Bhai fight Mental Balayya, eat everything on the way and reach the **Compound Gate** (Compound Entry) to get his TDP membership. The gate swings open and he dances inside. `assets/game-over.jpg` shows on the Game Over screen.
 
-Sounds: `assets/game-over.mp3` plays at game over and `assets/hit.mp3` plays when a villain catches the hero.
-`assets/burp.mp3` is the burp when eating (sometimes a fart plays instead).
+Sounds: `assets/fart.mp3` plays when eating and when a goon catches the hero; `assets/game-over.mp3` plays at game over.
+Soft background music (synthesized in the game) plays during a run; press M to mute everything.
 
 Movement (speed, jump height, gravity) is tuned in the `MOVE` table at the top of `game.js`.

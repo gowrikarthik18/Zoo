@@ -4,7 +4,7 @@
  * Heads (cut out of the photos) live in assets/: hero-head.png (Basha Bhai),
  * caught-head.png (his shocked face) and villain-head.png (Mental Balayya).
  * game-over.jpg is shown on the Game Over screen.
- * Sounds: burp.mp3 (eating), hit.mp3 (caught), game-over.mp3 (game over).
+ * Sounds: fart.mp3 (eating and caught), game-over.mp3 (game over). Background music is synthesized.
  */
 (() => {
   'use strict';
@@ -135,7 +135,7 @@
 
   // Sound clips from assets/. Decoded into Web Audio so they can play without a fresh tap
   // (needed on iPhone). Each falls back to a built-in sound if its file is missing.
-  //   game-over.mp3 -> game over      hit.mp3 -> a villain catches the hero
+  //   game-over.mp3 -> game over      fart.mp3 -> eating, and when a goon catches the hero
   const samples = {};
   function loadSample(name, url) {
     const s = samples[name] = { bytes: null, buf: null, el: null };
@@ -165,8 +165,8 @@
     } else fallback();
   }
   loadSample('gameover', 'assets/game-over.mp3');
-  loadSample('hit', 'assets/hit.mp3');
-  loadSample('burp', 'assets/burp.mp3');   // eating: your burp clip (slightly varied pitch each time)
+  loadSample('fart', 'assets/fart.mp3');   // eating and when a goon catches him
+  loadSample('burp', 'assets/burp.mp3');   // one celebratory burp when he enters the compound
 
   function synthBurp() {
     const a = audio(); if (!a || muted) return;
@@ -214,47 +214,79 @@
     const n = a.createBufferSource(); n.buffer = noiseBuf; n.loop = true;
     return n;
   }
-  function synthFart() {
-    const a = audio(); if (!a || muted) return;
-    const t = a.currentTime;
-    const dur = 0.45 + Math.random() * 0.55;
-    const base = 50 + Math.random() * 45;
-
-    const osc = a.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(base * (1.1 + Math.random() * 0.4), t);
-    osc.frequency.linearRampToValueAtTime(base * (0.7 + Math.random() * 0.3), t + dur);
-    const wob = a.createOscillator(); wob.frequency.value = 5 + Math.random() * 6;   // slow pitch wobble
-    const wobG = a.createGain(); wobG.gain.value = base * 0.25;
-    wob.connect(wobG).connect(osc.frequency);
-
-    const flutter = a.createGain(); flutter.gain.value = 0.5;                        // the "brrrr"
-    const fl = a.createOscillator(); fl.type = 'square'; fl.frequency.value = 22 + Math.random() * 20;
-    const flG = a.createGain(); flG.gain.value = 0.5;
-    fl.connect(flG).connect(flutter.gain);
-
-    const n = noise(a);                                                              // airy rasp
-    const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 260 + Math.random() * 200; bp.Q.value = 1.2;
-    const nG = a.createGain(); nG.gain.value = 0.35;
-    n.connect(bp).connect(nG).connect(flutter);
-
-    const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 3;
-    lp.frequency.setValueAtTime(700, t); lp.frequency.linearRampToValueAtTime(300, t + dur);
-
-    const env = a.createGain();
-    env.gain.setValueAtTime(0.0001, t);
-    env.gain.exponentialRampToValueAtTime(0.9, t + 0.025);
-    env.gain.setValueAtTime(0.85, t + dur * 0.7);
-    env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-
-    osc.connect(flutter);
-    flutter.connect(lp).connect(env).connect(master);
-    for (const o of [osc, wob, fl, n]) { o.start(t); o.stop(t + dur + 0.05); }
-  }
-  // Eating makes the hero burp or fart (random). Returns which one, for the on-screen text.
+  // Eating: only the fart clip, with a slightly different pitch each bite
   function eatSound() {
-    if (Math.random() < 0.65) { burp(); return 'burp'; }
-    synthFart(); return 'fart';
+    playSample('fart', () => {}, 1.1, 0.9 + Math.random() * 0.25);
+  }
+
+  // ------------------------------------------------------------------ Background music
+  // A soft looping tune (raga Bhairav flavour) synthesized live: plucked melody,
+  // warm bass and a light shaker. No drums or low booms. Kept quiet under the effects.
+  const MUSIC_VOL = 0.11;
+  const BPM = 116;
+  const MEL = [0, 4, 5, 7, 8, 7, 5, 4,   5, null, 4, 1, 0, null, 1, 4,
+               7, 8, 11, 12, 11, 8, 7, 5,  4, 5, 4, 1, 0, null, null, null];
+  const BASS = [0, 7, 0, 7,  1, 8, 1, 8,  0, 7, 0, 7,  -5, 2, -5, 2]; // one per quarter note
+  const music = { on: false, step: 0, next: 0, timer: null, gain: null };
+  const midiHz = semi => 261.63 * Math.pow(2, semi / 12);
+
+  function musicNote(freq, t, dur, type, vol, cutoff) {
+    const a = actx;
+    const o = a.createOscillator(); o.type = type; o.frequency.value = freq;
+    const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cutoff;
+    const g = a.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f).connect(g).connect(music.gain);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function musicShaker(t, vol) {
+    const a = actx;
+    const n = noise(a);
+    const hp = a.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 6000;
+    const g = a.createGain();
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    n.connect(hp).connect(g).connect(music.gain);
+    n.start(t); n.stop(t + 0.06);
+  }
+  function playMusicStep(step, t) {
+    const m = MEL[step];
+    if (m !== null) {
+      musicNote(midiHz(m + 12), t, 0.28, 'triangle', 0.5, 2600);
+      musicNote(midiHz(m + 24), t, 0.12, 'sine', 0.12, 4000);       // sparkle on top
+    }
+    if (step % 2 === 0) musicNote(midiHz(BASS[step / 2] - 12), t, 0.32, 'triangle', 0.55, 700);
+    musicShaker(t, step % 2 ? 0.16 : 0.08);
+  }
+  function scheduleMusic() {
+    if (!music.on || !actx) return;
+    const eighth = 60 / BPM / 2;
+    while (music.next < actx.currentTime + 0.3) {
+      playMusicStep(music.step, music.next);
+      music.next += eighth;
+      music.step = (music.step + 1) % MEL.length;
+    }
+  }
+  function musicLevel() { return muted || state === 'pause' ? 0 : MUSIC_VOL; }
+  function updateMusicVolume() {
+    if (music.on && music.gain) music.gain.gain.setTargetAtTime(musicLevel(), actx.currentTime, 0.08);
+  }
+  function startMusic() {
+    const a = audio(); if (!a || music.on) return;
+    music.gain = a.createGain(); music.gain.gain.value = 0.0001;
+    music.gain.connect(master);
+    music.on = true; music.step = 0; music.next = a.currentTime + 0.15;
+    music.timer = setInterval(scheduleMusic, 60);
+    scheduleMusic();
+    updateMusicVolume();
+  }
+  function stopMusic() {
+    if (!music.on) return;
+    clearInterval(music.timer); music.on = false;
+    const g = music.gain;
+    g.gain.setTargetAtTime(0.0001, actx.currentTime, 0.15);
+    setTimeout(() => g.disconnect(), 1200);
   }
   function burp() {
     playSample('burp', synthBurp, 1.1, 0.9 + Math.random() * 0.2);
@@ -273,7 +305,7 @@
   }
   const sfx = {
     jump: () => tone(220, 480, 0.14, 'triangle', 0.12),
-    stomp: () => { tone(420, 70, 0.2, 'triangle', 0.32); tone(120, 50, 0.14, 'sawtooth', 0.06); },
+    stomp: () => { tone(500, 900, 0.09, 'sine', 0.14); tone(700, 1200, 0.08, 'triangle', 0.06, 0.04); }, // light 'boing'
     hurt: () => { tone(300, 60, 0.5, 'sawtooth', 0.14); tone(90, 40, 0.4, 'square', 0.08); },
     bump: () => tone(120, 80, 0.08, 'triangle', 0.15),
     win: () => [392, 523, 659, 784, 1047].forEach((f, i) => tone(f, f, 0.35, 'triangle', 0.14, i * 0.12)),
@@ -511,7 +543,7 @@
     const k = KEYMAP[e.code];
     if (k) { e.preventDefault(); if (!e.repeat) press(k); }
     if (e.code === 'KeyP' || e.code === 'Escape') togglePause();
-    if (e.code === 'KeyM') muted = !muted;
+    if (e.code === 'KeyM') { muted = !muted; updateMusicVolume(); }
     if (e.code === 'Enter') {
       if (state === 'title' || state === 'over' || state === 'win') startGame();
       else if (state === 'pause') togglePause();
@@ -556,6 +588,7 @@
     particles = []; texts = [];
     state = 'play';
     showOnly(null);
+    startMusic();
   }
 
   // Game Over title, drawn with the same title template into a canvas in the panel
@@ -575,6 +608,7 @@
   function togglePause() {
     if (state === 'play') { state = 'pause'; showOnly('pauseScreen'); }
     else if (state === 'pause') { state = 'play'; showOnly(null); }
+    updateMusicVolume();
   }
 
   function addText(x, y, text, kind = 'info') { texts.push({ x, y, text, kind, t: 0 }); }
@@ -593,11 +627,12 @@
     if (reason === 'hit') caughtTimer = CAUGHT_TIME;
     shake = 12;
     if (lives > 0) {
-      if (reason === 'hit') playSample('hit', () => sfx.hurt());
+      if (reason === 'hit') playSample('fart', () => sfx.hurt());
       else sfx.hurt();
     }
     if (lives <= 0) {
       state = 'over';
+      stopMusic();
       playSample('gameover', () => sfx.lose());
       drawOverTitle();
       const img = document.getElementById('overImg');
@@ -707,7 +742,7 @@
     if (overlap(p, gift)) {
       p.won = true; winTimer = 0;
       p.vx = 0;
-      tone(110, 70, 0.9, 'sawtooth', 0.05); // gate creak
+      tone(320, 240, 0.7, 'triangle', 0.04); // gate creak
     }
 
     updateFx(dt);
@@ -743,6 +778,7 @@
     moveY(p, p.vy * dt);
     if (p.dancing && winTimer - p.danceStart > 2.8 && state === 'play') {
       state = 'win';
+      stopMusic();
       const timeBonus = Math.max(0, Math.round(300 - time)) * 10;
       const lifeBonus = lives * 1000;
       score += timeBonus + lifeBonus + 5000;
@@ -1616,7 +1652,7 @@
   document.getElementById('retryBtn').onclick = startGame;
   document.getElementById('againBtn').onclick = startGame;
   document.getElementById('resumeBtn').onclick = togglePause;
-  const toMenu = () => { state = 'title'; showOnly('titleScreen'); };
+  const toMenu = () => { state = 'title'; showOnly('titleScreen'); stopMusic(); };
   document.getElementById('overMenuBtn').onclick = toMenu;
   document.getElementById('winMenuBtn').onclick = toMenu;
   buildBackdrop();
