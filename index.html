@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Burp Hero: The Great Feast Run</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game" width="960" height="560"></canvas>
+
+    <!-- Title screen -->
+    <div class="overlay" id="titleScreen">
+      <div class="panel">
+        <h1>Burp Hero</h1>
+        <h2>The Great Feast Run</h2>
+        <p class="story">Run to the <b>Ultimate Gift</b>! Eat Bawarchi Biryani, whole BBQ chicken,
+          idli and bonda along the way (every bite = a big BURP). Stomp the evil green veggies!</p>
+
+        <div class="faces">
+          <div class="faceBox">
+            <canvas id="heroPreview" width="96" height="96"></canvas>
+            <label class="btn small">Hero face
+              <input type="file" accept="image/*" id="heroUpload" hidden />
+            </label>
+          </div>
+          <div class="faceBox">
+            <canvas id="veggiePreview" width="96" height="96"></canvas>
+            <label class="btn small">Veggie face
+              <input type="file" accept="image/*" id="veggieUpload" hidden />
+            </label>
+          </div>
+        </div>
+        <button class="link" id="resetFaces">reset faces</button>
+
+        <button class="btn big" id="startBtn">START</button>
+        <p class="help">Move: ← → or A D &nbsp;·&nbsp; Jump: Space / ↑ / W &nbsp;·&nbsp; Run: Shift
+          &nbsp;·&nbsp; Pause: P &nbsp;·&nbsp; Mute: M</p>
+      </div>
+    </div>
+
+    <!-- Pause -->
+    <div class="overlay hidden" id="pauseScreen">
+      <div class="panel">
+        <h1>Paused</h1>
+        <button class="btn big" id="resumeBtn">RESUME</button>
+      </div>
+    </div>
+
+    <!-- Game over -->
+    <div class="overlay hidden" id="overScreen">
+      <div class="panel">
+        <h1>Game Over</h1>
+        <p>The veggies won this time...</p>
+        <p class="stats" id="overStats"></p>
+        <button class="btn big" id="retryBtn">TRY AGAIN</button>
+        <button class="link" id="overMenuBtn">main menu</button>
+      </div>
+    </div>
+
+    <!-- Win -->
+    <div class="overlay hidden" id="winScreen">
+      <div class="panel">
+        <h1>You Got The Ultimate Gift!</h1>
+        <p class="stats" id="winStats"></p>
+        <button class="btn big" id="againBtn">PLAY AGAIN</button>
+        <button class="link" id="winMenuBtn">main menu</button>
+      </div>
+    </div>
+
+    <!-- Touch controls (shown on touch devices) -->
+    <div id="touch" class="hidden">
+      <div class="tleft">
+        <button data-key="left">◀</button>
+        <button data-key="right">▶</button>
+      </div>
+      <div class="tright">
+        <button data-key="run" class="tsmall">RUN</button>
+        <button data-key="jump">▲</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
