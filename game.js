@@ -48,6 +48,13 @@
     return g;
   }
 
+  // localStorage can be missing or throw in sandboxed frames
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* unavailable or full */ } },
+    remove(k) { try { localStorage.removeItem(k); } catch (e) { /* unavailable */ } },
+  };
+
   // ------------------------------------------------------------------ Faces
   const faceImg = { hero: null, veggie: null, caught: null }; // square canvases
 
@@ -70,7 +77,7 @@
     return cv;
   }
   async function loadFace(kind) {
-    const stored = localStorage.getItem('burphero_face_' + kind);
+    const stored = store.get('burphero_face_' + kind);
     if (stored) {
       const img = await loadImage(stored);
       if (img) { faceImg[kind] = toSquare(img, 1); return; } // already cropped when uploaded
@@ -89,7 +96,7 @@
       if (!img) return;
       const sq = toSquare(img);
       faceImg[kind] = sq;
-      try { localStorage.setItem('burphero_face_' + kind, sq.toDataURL('image/jpeg', 0.9)); } catch (e) { /* storage full */ }
+      store.set('burphero_face_' + kind, sq.toDataURL('image/jpeg', 0.9));
       drawPreviews();
     };
     reader.readAsDataURL(file);
@@ -1352,8 +1359,8 @@
   document.getElementById('heroUpload').onchange = e => handleUpload('hero', e.target.files[0]);
   document.getElementById('veggieUpload').onchange = e => handleUpload('veggie', e.target.files[0]);
   document.getElementById('resetFaces').onclick = async () => {
-    localStorage.removeItem('burphero_face_hero');
-    localStorage.removeItem('burphero_face_veggie');
+    store.remove('burphero_face_hero');
+    store.remove('burphero_face_veggie');
     await Promise.all([loadFace('hero'), loadFace('veggie'), loadFace('caught')]);
     drawPreviews();
   };
