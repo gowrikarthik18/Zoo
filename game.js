@@ -1,13 +1,10 @@
 /* Babai-Abbai: will Abbai get all his food?
  * Plain JavaScript + <canvas>. Open index.html in a browser to play.
  *
- * Faces live in assets/:
- *   hero-face.jpg    -> the hero while playing
- *   caught-face.jpg  -> the hero's shocked face when a villain catches him
- *   veggie-face.jpg  -> the face on every green vegetable villain
- *   game-over.jpg    -> shown on the Game Over screen
- * Hero/veggie faces can also be uploaded from the title screen (saved in the browser).
- * Optional: assets/burp.mp3 replaces the built-in synthesized burp.
+ * Heads (cut out of the photos) live in assets/: hero-head.png (Basha Bhai),
+ * caught-head.png (his shocked face) and villain-head.png (Mental Balayya).
+ * game-over.jpg is shown on the Game Over screen.
+ * Sounds: burp.mp3 (eating), hit.mp3 (caught), game-over.mp3 (game over).
  */
 (() => {
   'use strict';
