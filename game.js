@@ -1,4 +1,4 @@
-/* Burp Hero: The Great Feast Run
+/* Babai-Abbai: will Abbai get all his food?
  * Plain JavaScript + <canvas>. Open index.html in a browser to play.
  *
  * Faces live in assets/:
@@ -62,15 +62,12 @@
     return g;
   }
 
-  // localStorage can be missing or throw in sandboxed frames
-  const store = {
-    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* unavailable or full */ } },
-    remove(k) { try { localStorage.removeItem(k); } catch (e) { /* unavailable */ } },
-  };
-
-  // ------------------------------------------------------------------ Faces
-  const faceImg = { hero: null, veggie: null, caught: null }; // square canvases
+  // ------------------------------------------------------------------ Heads
+  // Cut-out heads (face + hair, transparent background) from the photos, in assets/:
+  //   hero-head.png    Basha Bhai while playing
+  //   caught-head.png  Basha Bhai's shocked face when Mental Balayya catches him
+  //   villain-head.png Mental Balayya, on every veggie
+  const heads = { hero: null, caught: null, villain: null };
 
   function loadImage(src) {
     return new Promise(res => {
@@ -80,101 +77,47 @@
       img.src = src;
     });
   }
-  function toSquare(img, zoom = 0.8, size = 256) {
-    const cv = makeCanvas(size, size);
-    const g = cv.getContext('2d');
-    const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
-    const s = Math.min(w, h) * zoom;
-    const sx = (w - s) / 2;
-    const sy = (h - s) * 0.35; // portraits: faces usually sit a bit above center
-    g.drawImage(img, sx, sy, s, s, 0, 0, size, size);
-    return cv;
-  }
-  async function loadFace(kind) {
-    const stored = store.get('burphero_face_' + kind);
-    if (stored) {
-      const img = await loadImage(stored);
-      if (img) { faceImg[kind] = toSquare(img, 1); return; } // already cropped when uploaded
-    }
-    for (const ext of ['jpg', 'png', 'jpeg', 'webp', 'PNG', 'JPG', 'JPEG']) {
-      const img = await loadImage(`assets/${kind}-face.${ext}`);
-      if (img) { faceImg[kind] = toSquare(img, 1); return; } // asset files are pre-cropped
-    }
-    faceImg[kind] = null;
-  }
-  function handleUpload(kind, file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const img = await loadImage(reader.result);
-      if (!img) return;
-      const sq = toSquare(img);
-      faceImg[kind] = sq;
-      store.set('burphero_face_' + kind, sq.toDataURL('image/jpeg', 0.9));
-      drawPreviews();
-    };
-    reader.readAsDataURL(file);
+  function loadHeads() {
+    return Promise.all(Object.keys(heads).map(async k => { heads[k] = await loadImage(`assets/${k}-head.png`); }));
   }
 
-  // Photo clipped into a circle, with an inner shadow and a thin rim. Returns false if no photo.
-  function drawPhotoFace(c, kind, cx, cy, r) {
-    const img = faceImg[kind];
-    if (!img) return false;
+  // Draw a cut-out head centred at (cx, cy), h pixels tall, with a soft contact shadow.
+  function drawHead(c, img, cx, cy, h) {
+    const w = h * img.width / img.height;
     c.save();
-    c.beginPath(); c.arc(cx, cy, r, 0, TAU); c.clip();
-    c.drawImage(img, cx - r, cy - r, r * 2, r * 2);
-    c.fillStyle = radial(c, cx, cy, r * 0.75, r, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.14)']]);
-    c.fillRect(cx - r, cy - r, r * 2, r * 2);
+    c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowBlur = h * 0.08; c.shadowOffsetY = h * 0.03;
+    c.drawImage(img, cx - w / 2, cy - h / 2, w, h);
     c.restore();
-    c.beginPath(); c.arc(cx, cy, r, 0, TAU);
-    c.lineWidth = Math.max(1.5, r * 0.08);
-    c.strokeStyle = kind === 'veggie' ? '#0c2410' : '#140d08';
-    c.stroke();
-    c.beginPath(); c.arc(cx, cy, Math.max(0.1, r - c.lineWidth * 0.5), Math.PI * 1.1, Math.PI * 1.6);
-    c.lineWidth = Math.max(1, r * 0.05); c.strokeStyle = 'rgba(255,235,200,0.35)'; c.stroke();
-    return true;
   }
 
-  // kind 'caught' = shocked face shown when a villain catches the hero (falls back to the normal face)
+  // r = half the head height. kind 'caught' = shocked face (falls back to the normal head)
   function drawHeroFace(c, cx, cy, r, dir, kind = 'hero') {
-    if (kind === 'caught' && drawPhotoFace(c, 'caught', cx, cy, r)) return;
-    if (drawPhotoFace(c, 'hero', cx, cy, r)) return;
+    const img = (kind === 'caught' && heads.caught) || heads.hero;
+    if (img) { drawHead(c, img, cx, cy, r * 2); return; }
     // illustrated fallback
     c.fillStyle = radial(c, cx, cy, r * 0.1, r, [[0, '#e3a976'], [1, '#a8683e']], cx - r * 0.3, cy - r * 0.3);
     c.beginPath(); c.arc(cx, cy, r, 0, TAU); c.fill();
     c.fillStyle = '#1d140e';
     c.beginPath(); c.arc(cx, cy - r * 0.15, r, Math.PI * 1.05, Math.PI * 1.95); c.fill();
     const ex = dir * r * 0.12;
-    c.fillStyle = '#1d140e';
     c.beginPath(); c.arc(cx - r * 0.35 + ex, cy - r * 0.05, r * 0.1, 0, TAU); c.arc(cx + r * 0.35 + ex, cy - r * 0.05, r * 0.1, 0, TAU); c.fill();
     c.beginPath(); c.ellipse(cx - r * 0.22, cy + r * 0.32, r * 0.26, r * 0.1, -0.25, 0, TAU);
     c.ellipse(cx + r * 0.22, cy + r * 0.32, r * 0.26, r * 0.1, 0.25, 0, TAU); c.fill();
-    c.lineWidth = Math.max(1.5, r * 0.08); c.strokeStyle = '#140d08';
-    c.beginPath(); c.arc(cx, cy, r, 0, TAU); c.stroke();
   }
 
   function drawVeggieFace(c, cx, cy, r) {
-    if (drawPhotoFace(c, 'veggie', cx, cy, r)) return;
+    if (heads.villain) { drawHead(c, heads.villain, cx, cy, r * 2); return; }
     c.fillStyle = '#f2f2e8';
     c.beginPath(); c.ellipse(cx - r * 0.38, cy, r * 0.28, r * 0.22, 0.25, 0, TAU); c.ellipse(cx + r * 0.38, cy, r * 0.28, r * 0.22, -0.25, 0, TAU); c.fill();
     c.fillStyle = '#7a0d0d';
     c.beginPath(); c.arc(cx - r * 0.34, cy + r * 0.03, r * 0.12, 0, TAU); c.arc(cx + r * 0.34, cy + r * 0.03, r * 0.12, 0, TAU); c.fill();
-    c.strokeStyle = '#0c2410'; c.lineWidth = r * 0.14; c.lineCap = 'round';
-    c.beginPath();
-    c.moveTo(cx - r * 0.75, cy - r * 0.42); c.lineTo(cx - r * 0.15, cy - r * 0.18);
-    c.moveTo(cx + r * 0.75, cy - r * 0.42); c.lineTo(cx + r * 0.15, cy - r * 0.18);
-    c.moveTo(cx - r * 0.3, cy + r * 0.6); c.lineTo(cx + r * 0.3, cy + r * 0.52);
-    c.stroke(); c.lineCap = 'butt';
   }
 
   function drawPreviews() {
     const hp = document.getElementById('heroPreview').getContext('2d');
-    hp.clearRect(0, 0, 192, 192); drawHeroFace(hp, 96, 96, 90, 1);
+    hp.clearRect(0, 0, 192, 192); drawHeroFace(hp, 96, 98, 88, 1);
     const vp = document.getElementById('veggiePreview').getContext('2d');
-    vp.clearRect(0, 0, 192, 192);
-    vp.fillStyle = radial(vp, 96, 96, 10, 94, [[0, '#4f9a45'], [1, '#173d18']], 70, 70);
-    vp.beginPath(); vp.arc(96, 96, 94, 0, TAU); vp.fill();
-    drawVeggieFace(vp, 96, 96, 80);
+    vp.clearRect(0, 0, 192, 192); drawVeggieFace(vp, 96, 98, 88);
   }
 
   // ------------------------------------------------------------------ Audio
@@ -797,7 +740,7 @@
       score += timeBonus + lifeBonus + 5000;
       document.getElementById('winStats').innerHTML =
         `<div class="row"><span>Food eaten</span><b>${eaten}</b></div>` +
-        `<div class="row"><span>Gift bonus</span><b>5,000</b></div>` +
+        `<div class="row"><span>Unlimited Tindi bonus</span><b>5,000</b></div>` +
         `<div class="row"><span>Time bonus</span><b>${timeBonus.toLocaleString()}</b></div>` +
         `<div class="row"><span>Lives bonus</span><b>${lifeBonus.toLocaleString()}</b></div>` +
         `<div class="row"><span>Time</span><b>${time.toFixed(1)}s</b></div>` +
@@ -1077,7 +1020,7 @@
     if ('letterSpacing' in ctx) ctx.letterSpacing = '4px';
     ctx.shadowColor = 'rgba(255,190,90,0.9)'; ctx.shadowBlur = 16;
     ctx.fillStyle = linear(ctx, 0, y - 104, 0, y - 76, [[0, '#fff3c4'], [1, '#e7a93a']]);
-    ctx.fillText('THE ULTIMATE GIFT', gcx, y - 80 + bob);
+    ctx.fillText('UNLIMITED TINDI', gcx, y - 80 + bob);
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(255,214,140,0.7)';
     ctx.fillRect(gcx - 120, y - 70 + bob, 240, 1);
@@ -1217,9 +1160,8 @@
       fy = -21; fr = 15.5;
     }
     ctx.scale(-e.dir, 1); // don't mirror the photo
-    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
-    ctx.fillStyle = '#0c2410'; ctx.beginPath(); ctx.arc(0, fy, fr + 0.5, 0, TAU); ctx.fill(); ctx.restore();
-    drawVeggieFace(ctx, 0, fy, fr);
+    // Mental Balayya's head pokes out of the vegetable
+    drawVeggieFace(ctx, 0, fy - 6, 19);
     ctx.restore();
   }
 
@@ -1295,10 +1237,10 @@
     ctx.restore();
 
     // head
-    const hx = cx + Math.sin(lean) * 52, hy = p.y + 2;
-    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 2;
-    ctx.fillStyle = '#140d08'; ctx.beginPath(); ctx.arc(hx, hy, 27.5, 0, TAU); ctx.fill(); ctx.restore();
-    drawHeroFace(ctx, hx, hy, 27, p.face);
+    // head sits on the collar: chin overlaps the top of the shirt
+    const HEAD_R = 29, chinY = p.y + 17;
+    const hx = cx + Math.sin(lean) * 60, hy = chinY - HEAD_R;
+    drawHeroFace(ctx, hx, hy, HEAD_R, p.face);
   }
 
   function drawFx() {
@@ -1366,12 +1308,12 @@
     const bx = 400, bw = 300, byy = 42;
     const prog = clamp((player.x + player.w - start.x) / (gift.x - start.x), 0, 1);
     ctx.textAlign = 'center';
-    hudLabel(bx + bw / 2, 26, 'JOURNEY TO THE GIFT');
+    hudLabel(bx + bw / 2, 26, 'JOURNEY TO UNLIMITED TINDI');
     ctx.fillStyle = 'rgba(255,255,255,0.18)'; rrect(ctx, bx, byy - 2, bw, 4, 2); ctx.fill();
     ctx.fillStyle = linear(ctx, bx, 0, bx + bw, 0, [[0, '#f0a83a'], [1, '#fff0b0']]);
     rrect(ctx, bx, byy - 2, Math.max(4, bw * prog), 4, 2); ctx.fill();
     drawBiryani(ctx, bx + bw + 16, byy + 1, 0.55, false);
-    drawHeroFace(ctx, bx + bw * prog, byy, 9, 1);
+    drawHeroFace(ctx, bx + bw * prog, byy - 2, 12, 1);
 
     // lives as hero heads
     for (let i = 0; i < 3; i++) {
@@ -1401,8 +1343,6 @@
     ctx.translate(VW / 2 + sh, 210);
     ctx.fillStyle = radial(ctx, 0, 0, r * 0.8, r * 1.8, [[0, 'rgba(255,60,40,0.55)'], [1, 'rgba(255,60,40,0)']]);
     ctx.beginPath(); ctx.arc(0, 0, r * 1.8, 0, TAU); ctx.fill();
-    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 24;
-    ctx.fillStyle = '#f5efe6'; ctx.beginPath(); ctx.arc(0, 0, r + 4, 0, TAU); ctx.fill(); ctx.restore();
     drawHeroFace(ctx, 0, 0, r, 1, 'caught');
     ctx.restore();
     drawCaughtCaption(VW / 2, 210 + 82 + 64, a);
@@ -1544,20 +1484,11 @@
   const toMenu = () => { state = 'title'; showOnly('titleScreen'); };
   document.getElementById('overMenuBtn').onclick = toMenu;
   document.getElementById('winMenuBtn').onclick = toMenu;
-  document.getElementById('heroUpload').onchange = e => handleUpload('hero', e.target.files[0]);
-  document.getElementById('veggieUpload').onchange = e => handleUpload('veggie', e.target.files[0]);
-  document.getElementById('resetFaces').onclick = async () => {
-    store.remove('burphero_face_hero');
-    store.remove('burphero_face_veggie');
-    await Promise.all([loadFace('hero'), loadFace('veggie'), loadFace('caught')]);
-    drawPreviews();
-  };
-
   buildBackdrop();
   buildLevel();
   player = newPlayer();
   drawPreviews();
-  Promise.all([loadFace('hero'), loadFace('veggie'), loadFace('caught')]).then(drawPreviews);
+  loadHeads().then(drawPreviews);
   if (document.fonts && document.fonts.load) {
     document.fonts.load(`30px ${FONT_DISPLAY}`).catch(() => {});
     document.fonts.load(`60px ${FONT_TITLE}`).then(() => { if (state === 'over') drawOverTitle(); }).catch(() => {});

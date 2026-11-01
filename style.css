@@ -67,12 +67,10 @@ h2 {
 
 .faces { display: flex; align-items: center; justify-content: center; gap: 26px; margin: 4px 0 14px; }
 .faceBox { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.faceBox canvas {
-  width: 84px; height: 84px; border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(255, 214, 140, 0.65), 0 0 0 6px rgba(255, 214, 140, 0.08), 0 12px 28px rgba(0, 0, 0, 0.55);
-}
+.faceBox canvas { width: 104px; height: 104px; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55)); }
+.name { font: 400 22px var(--display); letter-spacing: 2px; color: var(--gold-1); margin-top: -4px; }
 .role { font: 600 10px var(--ui); letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
-.vs { font: 400 34px var(--display); letter-spacing: 2px; color: rgba(255, 214, 140, 0.45); margin-bottom: 36px; }
+.vs { font: 400 40px var(--display); letter-spacing: 2px; color: rgba(255, 214, 140, 0.5); margin-bottom: 44px; }
 
 .btn {
   display: inline-block; cursor: pointer; border: none; border-radius: 999px;

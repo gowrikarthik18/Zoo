@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Burp Hero: The Great Feast Run</title>
+  <title>Babai-Abbai</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
@@ -17,26 +17,22 @@
     <div class="overlay" id="titleScreen">
       <div class="panel">
         <div class="eyebrow">A Feast-Fuelled Platformer</div>
-        <h1>Burp Hero</h1>
-        <h2>The Great Feast Run</h2>
-        <p class="story">Fight through the green-veggie gang, eat everything on the way and claim the
-          <b>Ultimate Gift</b>. Bawarchi Biryani, whole BBQ chicken, idli and bonda: every bite counts.</p>
+        <h1>Babai-Abbai</h1>
+        <h2>Will Abbai get all his food?</h2>
+        <p class="story">Help <b>Basha Bhai</b> fight through <b>Mental Balayya</b>'s veggie gang, eat everything on the way
+          and reach the <b>Unlimited Tindi</b>: Bawarchi Biryani, whole BBQ chicken, idli and bonda.</p>
 
         <div class="faces">
           <div class="faceBox">
             <canvas id="heroPreview" width="192" height="192"></canvas>
             <span class="role">Hero</span>
-            <label class="btn ghost">Change
-              <input type="file" accept="image/*" id="heroUpload" hidden />
-            </label>
+            <span class="name">Basha Bhai</span>
           </div>
           <div class="vs">VS</div>
           <div class="faceBox">
             <canvas id="veggiePreview" width="192" height="192"></canvas>
             <span class="role">Villain</span>
-            <label class="btn ghost">Change
-              <input type="file" accept="image/*" id="veggieUpload" hidden />
-            </label>
+            <span class="name">Mental Balayya</span>
           </div>
         </div>
 
@@ -48,7 +44,6 @@
           <span><kbd>P</kbd> Pause</span>
           <span><kbd>M</kbd> Mute</span>
         </div>
-        <button class="link" id="resetFaces">Reset faces</button>
       </div>
     </div>
 
@@ -74,8 +69,8 @@
     <!-- Win -->
     <div class="overlay hidden" id="winScreen">
       <div class="panel">
-        <div class="eyebrow">Victory</div>
-        <h1>The Gift Is Yours</h1>
+        <div class="eyebrow">Abbai got all his food</div>
+        <h1>Unlimited Tindi!</h1>
         <div class="stats table" id="winStats"></div>
         <button class="btn big" id="againBtn">Play Again</button>
         <button class="link" id="winMenuBtn">Main menu</button>
