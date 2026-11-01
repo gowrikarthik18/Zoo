@@ -319,7 +319,7 @@
     const food = (col, row, type) => foods.push({ x: col * T + T / 2, y: row * T + T / 2, type, phase: Math.random() * TAU, got: false });
     const line = (col, row, n, types) => { for (let i = 0; i < n; i++) food(col + i, row, types[i % types.length]); };
     const enemy = (col, row, kind) => enemies.push({
-      kind, x: col * T + 1, y: (row + 1) * T - 40, w: 38, h: 40,
+      kind, x: col * T - 4, y: (row + 1) * T - 50, w: 46, h: 50,
       vx: 0, vy: 0, dir: -1, speed: 55 + Math.random() * 20, onGround: false,
       dead: false, squash: 0, gone: false, phase: Math.random() * TAU,
     });
@@ -763,8 +763,11 @@
 
   function drawEnemy(e) {
     const x = e.x - camX; if (x < -60 || x > VW + 60) return;
-    const cx = x + e.w / 2, bottom = e.y + e.h, top = e.y;
+    const cx = x + e.w / 2, bottom = e.y + e.h, top = bottom - 40;
     ctx.save();
+    // art is drawn in a 38x40 box, scaled up to the hitbox so the face is easy to see
+    const S = e.h / 40;
+    ctx.translate(cx, bottom); ctx.scale(S, S); ctx.translate(-cx, -bottom);
     if (e.dead) {
       ctx.translate(cx, bottom); ctx.scale(1.3, 0.35); ctx.translate(-cx, -bottom);
       ctx.globalAlpha = Math.max(0, e.squash / 0.5);
@@ -802,7 +805,7 @@
       ctx.fillStyle = '#33691e'; ctx.fillRect(cx - 3, top - 2, 6, 8);
       fy = top + 21;
     }
-    drawVeggieFace(ctx, cx, fy, 12);
+    drawVeggieFace(ctx, cx, fy, 15);
     ctx.restore();
   }
 
