@@ -16,7 +16,21 @@
   const ctx = canvas.getContext('2d');
   const VW = 960, VH = 560, T = 40, ROWS = 14;
   const TAU = Math.PI * 2;
-  const GRAV = 2000, MAXFALL = 950, JUMP_V = 900; // full jump ~5 tiles high
+  const GRAV = 2000, MAXFALL = 1000;
+  // Hero movement tuning (pixels; one block = 40px)
+  const MOVE = {
+    walk: 175,        // walking speed
+    run: 255,         // speed while RUN is held
+    accelGround: 1500,
+    accelAir: 1100,
+    brakeGround: 2400, // stops quickly, no ice-skating
+    brakeAir: 700,
+    jumpV: 960,        // full (held) jump: ~5 blocks high
+    riseGrav: 2300,
+    fallGrav: 3000,    // falls faster than he rises: snappier, less floaty
+    cutV: 470,         // early release: still clears ~3 blocks
+    minHold: 0.11,
+  };
   const SS = 2; // supersampling for cached sprites
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const FONT_DISPLAY = '"Bebas Neue", Impact, "Arial Narrow", sans-serif';
@@ -175,34 +189,43 @@
       master.connect(actx.destination);
     }
     if (actx.state === 'suspended') actx.resume();
-    decodeGameOver();
+    decodeSamples();
     return actx;
   }
 
-  // Optional game-over sound: assets/game-over.mp3. Decoded into Web Audio so it can play
-  // without a fresh tap (needed on iPhone). Falls back to the built-in jingle if missing.
-  let gameOverBytes = null, gameOverBuf = null, gameOverEl = null;
-  fetch('assets/game-over.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(b => { gameOverBytes = b; decodeGameOver(); }).catch(() => {
-    const el = new Audio(); el.preload = 'auto';
-    el.addEventListener('canplaythrough', () => { gameOverEl = el; }, { once: true });
-    el.src = 'assets/game-over.mp3';
-  });
-  function decodeGameOver() {
-    if (!actx || gameOverBuf || !gameOverBytes) return;
-    const bytes = gameOverBytes; gameOverBytes = null;
-    actx.decodeAudioData(bytes, buf => { gameOverBuf = buf; }, () => {});
+  // Sound clips from assets/. Decoded into Web Audio so they can play without a fresh tap
+  // (needed on iPhone). Each falls back to a built-in sound if its file is missing.
+  //   game-over.mp3 -> game over      hit.mp3 -> a villain catches the hero
+  const samples = {};
+  function loadSample(name, url) {
+    const s = samples[name] = { bytes: null, buf: null, el: null };
+    fetch(url).then(r => r.ok ? r.arrayBuffer() : null).then(b => { s.bytes = b; decodeSamples(); }).catch(() => {
+      const el = new Audio(); el.preload = 'auto';
+      el.addEventListener('canplaythrough', () => { s.el = el; }, { once: true });
+      el.src = url;
+    });
   }
-  function playGameOverSound(fallback = () => sfx.lose()) {
+  function decodeSamples() {
+    if (!actx) return;
+    for (const s of Object.values(samples)) {
+      if (s.buf || !s.bytes) continue;
+      const bytes = s.bytes; s.bytes = null;
+      actx.decodeAudioData(bytes, buf => { s.buf = buf; }, () => {});
+    }
+  }
+  function playSample(name, fallback, vol = 1.2) {
     if (muted) return;
-    const a = audio();
-    if (a && gameOverBuf) {
-      const src = a.createBufferSource(); src.buffer = gameOverBuf;
-      const g = a.createGain(); g.gain.value = 1.2;
+    const s = samples[name], a = audio();
+    if (s && a && s.buf) {
+      const src = a.createBufferSource(); src.buffer = s.buf;
+      const g = a.createGain(); g.gain.value = vol;
       src.connect(g).connect(master); src.start();
-    } else if (gameOverEl) {
-      gameOverEl.currentTime = 0; gameOverEl.play().catch(fallback);
+    } else if (s && s.el) {
+      s.el.currentTime = 0; s.el.play().catch(fallback);
     } else fallback();
   }
+  loadSample('gameover', 'assets/game-over.mp3');
+  loadSample('hit', 'assets/hit.mp3');
 
   let burpFile = null; // optional assets/burp.mp3
   (() => {
@@ -587,7 +610,7 @@
   let state = 'title';
   let player, camX = 0, score = 0, eaten = 0, lives = 3, time = 0, winTimer = 0, caughtTimer = 0, shake = 0;
   let particles = [], texts = [];
-  const CAUGHT_TIME = 1.3;
+  const CAUGHT_TIME = 1.9;
 
   function newPlayer() {
     return {
@@ -605,6 +628,28 @@
     particles = []; texts = [];
     state = 'play';
     showOnly(null);
+  }
+
+  // Split a heading into letters that drop in one after another, then wave (see style.css)
+  function animateTitle(el) {
+    const text = el.dataset.text || el.textContent;
+    el.dataset.text = text;
+    el.innerHTML = '';
+    let i = 0;
+    text.split(' ').forEach((word, wi) => {
+      if (wi) el.appendChild(document.createTextNode(' '));
+      const w = document.createElement('span'); w.className = 'word';
+      for (const ch of word) {
+        const c = document.createElement('span');
+        c.className = 'ch'; c.textContent = ch;
+        c.style.setProperty('--d', `${0.25 + i * 0.045}s`);
+        c.style.setProperty('--w', `${i * 0.12}s`);
+        w.appendChild(c); i++;
+      }
+      el.appendChild(w);
+    });
+    const img = document.getElementById('overImg');
+    img.classList.remove('pop'); void img.offsetWidth; img.classList.add('pop');
   }
 
   const screens = ['titleScreen', 'pauseScreen', 'overScreen', 'winScreen'];
@@ -632,12 +677,13 @@
     if (reason === 'hit') caughtTimer = CAUGHT_TIME;
     shake = 12;
     if (lives > 0) {
-      if (reason === 'hit') playGameOverSound(() => sfx.hurt()); // same sound when a villain catches him
+      if (reason === 'hit') playSample('hit', () => sfx.hurt());
       else sfx.hurt();
     }
     if (lives <= 0) {
       state = 'over';
-      playGameOverSound();
+      playSample('gameover', () => sfx.lose());
+      animateTitle(document.getElementById('overTitle'));
       document.getElementById('overStats').innerHTML = `Score <b>${score.toLocaleString()}</b> &nbsp;·&nbsp; Food eaten <b>${eaten}</b>`;
       showOnly('overScreen');
       return;
@@ -658,27 +704,28 @@
 
     if (p.won) { updateWin(dt); return; }
 
-    const maxV = keys.run ? 230 : 160;   // walk / run speed
-    const acc = p.onGround ? 1100 : 800;
-    if (keys.left && !keys.right) { p.vx -= acc * dt; p.face = -1; }
-    else if (keys.right && !keys.left) { p.vx += acc * dt; p.face = 1; }
+    const maxV = keys.run ? MOVE.run : MOVE.walk;
+    const acc = p.onGround ? MOVE.accelGround : MOVE.accelAir;
+    const turn = (dir) => (Math.sign(p.vx) === -dir ? 2 : 1); // reverse direction faster
+    if (keys.left && !keys.right) { p.vx -= acc * turn(-1) * dt; p.face = -1; }
+    else if (keys.right && !keys.left) { p.vx += acc * turn(1) * dt; p.face = 1; }
     else {
-      const f = (p.onGround ? 1800 : 500) * dt;
+      const f = (p.onGround ? MOVE.brakeGround : MOVE.brakeAir) * dt;
       p.vx = Math.abs(p.vx) <= f ? 0 : p.vx - Math.sign(p.vx) * f;
     }
-    if (Math.abs(p.vx) > maxV) p.vx -= Math.sign(p.vx) * Math.min(Math.abs(p.vx) - maxV, 900 * dt);
+    if (Math.abs(p.vx) > maxV) p.vx -= Math.sign(p.vx) * Math.min(Math.abs(p.vx) - maxV, MOVE.brakeGround * dt);
 
     p.coyote = p.onGround ? 0.1 : p.coyote - dt;
     p.jumpBuf = jumpPressed ? 0.12 : p.jumpBuf - dt;
     jumpPressed = false;
     if (p.jumpBuf > 0 && p.coyote > 0) {
-      p.vy = -JUMP_V; p.coyote = 0; p.jumpBuf = 0; p.jumpTime = 0; sfx.jump();
+      p.vy = -MOVE.jumpV; p.coyote = 0; p.jumpBuf = 0; p.jumpTime = 0; sfx.jump();
       burst(p.x + p.w / 2, p.y + p.h, ['rgba(230,200,160,0.8)'], 6, 90, 200);
     }
     // releasing jump early gives a shorter jump, but even a quick tap clears ~3 blocks
     p.jumpTime = (p.jumpTime || 0) + dt;
-    if (!keys.jump && p.jumpTime > 0.12 && p.vy < -420) p.vy = -420;
-    p.vy = Math.min(p.vy + GRAV * dt, MAXFALL);
+    if (!keys.jump && p.jumpTime > MOVE.minHold && p.vy < -MOVE.cutV) p.vy = -MOVE.cutV;
+    p.vy = Math.min(p.vy + (p.vy < 0 ? MOVE.riseGrav : MOVE.fallGrav) * dt, MAXFALL);
 
     p.prevY = p.y;
     const wasAir = !p.onGround, fallV = p.vy;
@@ -1381,12 +1428,68 @@
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 24;
     ctx.fillStyle = '#f5efe6'; ctx.beginPath(); ctx.arc(0, 0, r + 4, 0, TAU); ctx.fill(); ctx.restore();
     drawHeroFace(ctx, 0, 0, r, 1, 'caught');
-    ctx.textAlign = 'center';
-    ctx.font = `66px ${FONT_DISPLAY}`;
-    if ('letterSpacing' in ctx) ctx.letterSpacing = '5px';
-    ctx.shadowColor = 'rgba(255,40,40,0.9)'; ctx.shadowBlur = 22;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText('SAVE ME THATHA!', 2, r + 72);
+    ctx.restore();
+    drawShoutText('KAAPAADU THATHAAA!', VW / 2 + sh * 0.5, 210 + 82 + 58, 70, age, a);
+  }
+
+  const easeOutBack = x => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * (x - 1) ** 3 + c1 * (x - 1) ** 2; };
+
+  // Animated shout: a ribbon sweeps in, letters pop in one by one with overshoot,
+  // then keep wobbling on a wave with a hot glow.
+  function drawShoutText(text, x, y, size, age, alpha = 1) {
+    const chars = [...text];
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = `${size}px ${FONT_DISPLAY}`;
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    const gap = size * 0.07;
+    const widths = chars.map(ch => ch === ' ' ? size * 0.28 : ctx.measureText(ch).width);
+    const total = widths.reduce((s, w) => s + w, 0) + gap * (chars.length - 1);
+
+    // ribbon
+    const rw = (total + size * 1.3) * easeOutBack(Math.min(1, age * 4));
+    const rh = size * 1.08;
+    ctx.save();
+    ctx.translate(x, y + size * 0.04);
+    ctx.rotate(-0.035);
+    ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6;
+    ctx.fillStyle = linear(ctx, 0, -rh / 2, 0, rh / 2, [[0, '#c4161f'], [0.5, '#7d0b12'], [1, '#4a0509']]);
+    ctx.beginPath();
+    ctx.moveTo(-rw / 2 - 18, -rh / 2); ctx.lineTo(rw / 2 + 18, -rh / 2); ctx.lineTo(rw / 2, 0); ctx.lineTo(rw / 2 + 18, rh / 2);
+    ctx.lineTo(-rw / 2 - 18, rh / 2); ctx.lineTo(-rw / 2, 0); ctx.closePath(); ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = linear(ctx, -rw / 2, 0, rw / 2, 0, [[0, '#a8701a'], [0.5, '#fff0b0'], [1, '#a8701a']]);
+    ctx.fillRect(-rw / 2 - 4, -rh / 2 + 4, rw + 8, 2.5);
+    ctx.fillRect(-rw / 2 - 4, rh / 2 - 6.5, rw + 8, 2.5);
+    // moving shine across the ribbon
+    const sx = ((age * 1.2) % 1.4 - 0.2) * rw - rw / 2;
+    ctx.fillStyle = linear(ctx, sx - 40, 0, sx + 40, 0, [[0, 'rgba(255,255,255,0)'], [0.5, 'rgba(255,230,200,0.22)'], [1, 'rgba(255,255,255,0)']]);
+    ctx.fillRect(-rw / 2, -rh / 2, rw, rh);
+    ctx.restore();
+
+    // letters
+    let cx = x - total / 2;
+    chars.forEach((ch, i) => {
+      const w = widths[i];
+      const t = age - 0.12 - i * 0.04;
+      if (ch !== ' ' && t > 0) {
+        const pop = t < 0.3 ? Math.max(0.01, easeOutBack(t / 0.3)) : 1;
+        const wave = Math.sin(age * 8 - i * 0.6) * size * 0.06;
+        const rot = Math.sin(age * 6 + i * 1.7) * 0.07;
+        ctx.save();
+        ctx.translate(cx + w / 2, y + wave - (1 - Math.min(1, t / 0.3)) * 30);
+        ctx.rotate(rot);
+        ctx.scale(pop, pop);
+        ctx.lineWidth = size * 0.17; ctx.strokeStyle = '#1f0303';
+        ctx.strokeText(ch, 0, 0);
+        ctx.shadowColor = 'rgba(255,60,30,0.85)'; ctx.shadowBlur = 16 + Math.sin(age * 10) * 6;
+        ctx.fillStyle = linear(ctx, 0, -size * 0.45, 0, size * 0.45, [[0, '#fffbe6'], [0.45, '#ffd54a'], [1, '#ff6a1f']]);
+        ctx.fillText(ch, 0, 0);
+        ctx.restore();
+      }
+      cx += w + gap;
+    });
     ctx.restore();
   }
 

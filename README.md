@@ -40,4 +40,7 @@ priority over these files. Click **reset faces** on the title screen to go back 
 
 When a villain veggie catches the hero, the big shocked face (`caught-face.jpg`) pops up with "CAUGHT!".
 
+Sounds: `assets/game-over.mp3` plays at game over and `assets/hit.mp3` plays when a villain catches the hero.
 Optional: add `assets/burp.mp3` to replace the built-in burp sound.
+
+Movement (speed, jump height, gravity) is tuned in the `MOVE` table at the top of `game.js`.
