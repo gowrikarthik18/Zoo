@@ -4,7 +4,8 @@
  * Heads (cut out of the photos) live in assets/: hero-head.png (Basha Bhai),
  * caught-head.png (his shocked face) and villain-head.png (Mental Balayya).
  * game-over.jpg is shown on the Game Over screen.
- * Sounds: burp.mp3 (eating, stomping), fart.mp3 (touched by a goon), game-over.mp3 (game over).
+ * Sounds: burp.mp3 (eating), fart.mp3 (touched by a goon), game-over.mp3 (game over).
+ * Stomping a goon plays a synthesized 'puchik' squish.
  * Background music is synthesized.
  */
 (() => {
@@ -136,7 +137,7 @@
 
   // Sound clips from assets/. Decoded into Web Audio so they can play without a fresh tap
   // (needed on iPhone). Each falls back to a built-in sound if its file is missing.
-  //   game-over.mp3 -> game over   fart.mp3 -> a goon touches the hero   burp.mp3 -> eating, stomping
+  //   game-over.mp3 -> game over   fart.mp3 -> a goon touches the hero   burp.mp3 -> eating
   const samples = {};
   function loadSample(name, url) {
     const s = samples[name] = { bytes: null, buf: null, el: null };
@@ -167,7 +168,7 @@
   }
   loadSample('gameover', 'assets/game-over.mp3');
   loadSample('fart', 'assets/fart.mp3');   // when a goon touches/catches him
-  loadSample('burp', 'assets/burp.mp3');   // eating, stomping a goon, and entering the compound
+  loadSample('burp', 'assets/burp.mp3');   // eating, and entering the compound
 
   function synthBurp() {
     const a = audio(); if (!a || muted) return;
@@ -215,7 +216,34 @@
     const n = a.createBufferSource(); n.buffer = noiseBuf; n.loop = true;
     return n;
   }
-  // Eating and stomping a goon: the burp clip, slightly different pitch each time.
+  // Stomping a goon: a squishy "pu-CHIK" (soft wet "pu" then a sharp "chik"). No low booms.
+  function puchik() {
+    const a = audio(); if (!a || muted) return;
+    const t = a.currentTime, v = 0.9 + Math.random() * 0.2;
+    // "pu": quick falling pop
+    const o = a.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(420 * v, t); o.frequency.exponentialRampToValueAtTime(150 * v, t + 0.07);
+    const og = a.createGain();
+    og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.45, t + 0.006); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+    o.connect(og).connect(master); o.start(t); o.stop(t + 0.09);
+    // wet squelch under the "pu"
+    const w = noise(a), wf = a.createBiquadFilter(); wf.type = 'bandpass'; wf.Q.value = 3;
+    wf.frequency.setValueAtTime(1200, t); wf.frequency.exponentialRampToValueAtTime(350, t + 0.09);
+    const wg = a.createGain(); wg.gain.setValueAtTime(0.25, t); wg.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+    w.connect(wf).connect(wg).connect(master); w.start(t); w.stop(t + 0.11);
+    // "chik": short bright click
+    const c0 = t + 0.075;
+    const n = noise(a), nf = a.createBiquadFilter(); nf.type = 'bandpass'; nf.Q.value = 2.5;
+    nf.frequency.setValueAtTime(4200 * v, c0); nf.frequency.exponentialRampToValueAtTime(2400 * v, c0 + 0.06);
+    const ng = a.createGain(); ng.gain.setValueAtTime(0.0001, c0); ng.gain.exponentialRampToValueAtTime(0.5, c0 + 0.004); ng.gain.exponentialRampToValueAtTime(0.0001, c0 + 0.07);
+    n.connect(nf).connect(ng).connect(master); n.start(c0); n.stop(c0 + 0.08);
+    const k = a.createOscillator(); k.type = 'square';
+    k.frequency.setValueAtTime(2200 * v, c0); k.frequency.exponentialRampToValueAtTime(1300 * v, c0 + 0.03);
+    const kg = a.createGain(); kg.gain.setValueAtTime(0.06, c0); kg.gain.exponentialRampToValueAtTime(0.0001, c0 + 0.035);
+    k.connect(kg).connect(master); k.start(c0); k.stop(c0 + 0.04);
+  }
+
+  // Eating: the burp clip, slightly different pitch each time.
   // (Touching a goon plays the fart clip, see loseLife.)
   function eatSound() {
     playSample('burp', () => {}, 1.1, 0.9 + Math.random() * 0.2);
@@ -729,7 +757,7 @@
           p.vy = keys.jump ? -720 : -460;
           score += 200;
           shake = 5;
-          playSample('burp', () => sfx.stomp(), 1.1, 0.8 + Math.random() * 0.2);
+          puchik();
           addText(e.x + e.w / 2, e.y - 6, '+200  SQUASHED', 'info');
           burst(e.x + e.w / 2, e.y + e.h / 2, ['#2f7a2c', '#6fbf5a', '#a5d6a7', '#1b4d1b'], 18, 230);
         } else if (p.invuln <= 0) {
