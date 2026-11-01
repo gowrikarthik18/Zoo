@@ -213,27 +213,20 @@
       actx.decodeAudioData(bytes, buf => { s.buf = buf; }, () => {});
     }
   }
-  function playSample(name, fallback, vol = 1.2) {
+  function playSample(name, fallback, vol = 1.2, rate = 1) {
     if (muted) return;
     const s = samples[name], a = audio();
     if (s && a && s.buf) {
-      const src = a.createBufferSource(); src.buffer = s.buf;
+      const src = a.createBufferSource(); src.buffer = s.buf; src.playbackRate.value = rate;
       const g = a.createGain(); g.gain.value = vol;
       src.connect(g).connect(master); src.start();
     } else if (s && s.el) {
-      s.el.currentTime = 0; s.el.play().catch(fallback);
+      s.el.currentTime = 0; s.el.playbackRate = rate; s.el.play().catch(fallback);
     } else fallback();
   }
   loadSample('gameover', 'assets/game-over.mp3');
   loadSample('hit', 'assets/hit.mp3');
-
-  let burpFile = null; // optional assets/burp.mp3
-  (() => {
-    const a = new Audio();
-    a.preload = 'auto';
-    a.addEventListener('canplaythrough', () => { burpFile = a; }, { once: true });
-    a.src = 'assets/burp.mp3';
-  })();
+  loadSample('burp', 'assets/burp.mp3');   // eating: your burp clip (slightly varied pitch each time)
 
   function synthBurp() {
     const a = audio(); if (!a || muted) return;
@@ -320,16 +313,11 @@
   }
   // Eating makes the hero burp or fart (random). Returns which one, for the on-screen text.
   function eatSound() {
-    if (Math.random() < 0.5) { burp(); return 'burp'; }
+    if (Math.random() < 0.65) { burp(); return 'burp'; }
     synthFart(); return 'fart';
   }
   function burp() {
-    if (muted) return;
-    if (burpFile) {
-      const s = burpFile.cloneNode();
-      s.playbackRate = 0.85 + Math.random() * 0.3;
-      s.play().catch(() => synthBurp());
-    } else synthBurp();
+    playSample('burp', synthBurp, 1.1, 0.9 + Math.random() * 0.2);
   }
   function tone(f1, f2, dur, type = 'square', vol = 0.15, delay = 0) {
     const a = audio(); if (!a || muted) return;
