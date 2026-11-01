@@ -27,14 +27,14 @@ On-screen buttons appear automatically on phones and tablets.
 | Bonda | 100 |
 
 Every bite makes the hero burp and get a little fatter. Stomping a veggie gives 200 points.
-The Ultimate Gift is a giant platter heaped with biryani, BBQ chickens, idli and bonda. Reaching it gives a 5000 bonus, plus bonuses for time and remaining lives.
+Reaching the Compound Gate gives a 5000 bonus, plus bonuses for time and remaining lives.
 
 ## Characters
 - **Basha Bhai** (hero): `assets/hero-head.png`, plus `assets/caught-head.png` for his shocked face when caught.
 - **Mental Balayya** (villain): `assets/villain-head.png`, his head sticks out of every veggie.
 
 The heads were cut out of the original photos (face and hair, transparent background).
-The final goal is **Unlimited Tindi**, a giant feast platter. `assets/game-over.jpg` shows on the Game Over screen.
+The goal: help Basha Bhai fight Mental Balayya, eat everything on the way and reach the **Compound Gate** (Compound Entry) to get his TDP membership. The gate swings open and he dances inside. `assets/game-over.jpg` shows on the Game Over screen.
 
 Sounds: `assets/game-over.mp3` plays at game over and `assets/hit.mp3` plays when a villain catches the hero.
 `assets/burp.mp3` is the burp when eating (sometimes a fart plays instead).

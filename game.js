@@ -458,7 +458,7 @@
     stairsUp(189, 6); stairsDown(195, 6);
     food(194, 4, 'b'); food(195, 4, 'c');
     line(201, 10, 3, ['b', 'c', 'b']);
-    gift = { x: 205 * T, y: 12 * T - 150, w: 240, h: 150, open: 0 };
+    gift = { x: 204 * T, y: 12 * T - 230, w: 260, h: 230, open: 0 }; // the compound gate
     start = { x: 3 * T, y: 12 * T - 54 };
   }
 
@@ -707,8 +707,7 @@
     if (overlap(p, gift)) {
       p.won = true; winTimer = 0;
       p.vx = 0;
-      sfx.win();
-      burp();
+      tone(110, 70, 0.9, 'sawtooth', 0.05); // gate creak
     }
 
     updateFx(dt);
@@ -718,26 +717,38 @@
   function updateWin(dt) {
     const p = player;
     winTimer += dt;
+    gift.open = Math.min(1, gift.open + dt * 1.1);       // gate swings open
     p.vy = Math.min(p.vy + GRAV * dt, MAXFALL);
-    moveY(p, p.vy * dt);
-    if (p.onGround && winTimer < 1.4) p.vy = -500;
-    gift.open = Math.min(1, gift.open + dt * 1.5);
-    for (let i = 0; i < 3; i++) {
-      particles.push({
-        x: gift.x + gift.w / 2 + (Math.random() - 0.5) * 40, y: gift.y - 10,
-        vx: (Math.random() - 0.5) * 500, vy: -300 - Math.random() * 400, life: 2, max: 2,
-        color: ['#ffd77a', '#ffffff', '#e8a33c', '#c0392b', '#f5e6c8'][Math.floor(Math.random() * 5)],
-        size: 3 + Math.random() * 3, grav: 500, glow: false, rot: Math.random() * TAU, confetti: true,
-      });
+    if (!p.dancing) {
+      p.vx = 0;
+      if (gift.open > 0.45) {                              // walk into the gateway
+        const dx = gift.x + gift.w / 2 - p.w / 2 - p.x;
+        const stepX = Math.sign(dx) * Math.min(Math.abs(dx), 170 * dt);
+        p.x += stepX; p.vx = stepX / dt; p.face = dx >= 0 ? 1 : -1;
+        if (Math.abs(dx) < 1) { p.dancing = true; p.danceStart = winTimer; p.vx = 0; sfx.win(); burp(); }
+      }
+    } else {
+      const t = winTimer - p.danceStart;
+      p.face = Math.sin(t * 4.7) > 0 ? 1 : -1;            // turn side to side
+      if (p.onGround && t % 0.55 < dt) p.vy = -330;       // hop on the beat
+      for (let i = 0; i < 2; i++) {
+        particles.push({
+          x: gift.x + gift.w / 2 + (Math.random() - 0.5) * 200, y: gift.y,
+          vx: (Math.random() - 0.5) * 300, vy: -200 - Math.random() * 300, life: 2.2, max: 2.2,
+          color: ['#f6c90e', '#ffffff', '#ffd77a', '#e8a33c', '#c0392b'][Math.floor(Math.random() * 5)],
+          size: 3 + Math.random() * 3, grav: 400, glow: false, rot: Math.random() * TAU, confetti: true,
+        });
+      }
     }
-    if (winTimer > 1.6 && state === 'play') {
+    moveY(p, p.vy * dt);
+    if (p.dancing && winTimer - p.danceStart > 2.8 && state === 'play') {
       state = 'win';
       const timeBonus = Math.max(0, Math.round(300 - time)) * 10;
       const lifeBonus = lives * 1000;
       score += timeBonus + lifeBonus + 5000;
       document.getElementById('winStats').innerHTML =
         `<div class="row"><span>Food eaten</span><b>${eaten}</b></div>` +
-        `<div class="row"><span>Unlimited Tindi bonus</span><b>5,000</b></div>` +
+        `<div class="row"><span>Compound Entry bonus</span><b>5,000</b></div>` +
         `<div class="row"><span>Time bonus</span><b>${timeBonus.toLocaleString()}</b></div>` +
         `<div class="row"><span>Lives bonus</span><b>${lifeBonus.toLocaleString()}</b></div>` +
         `<div class="row"><span>Time</span><b>${time.toFixed(1)}s</b></div>` +
@@ -1017,14 +1028,14 @@
     if ('letterSpacing' in ctx) ctx.letterSpacing = '4px';
     ctx.shadowColor = 'rgba(255,190,90,0.9)'; ctx.shadowBlur = 16;
     ctx.fillStyle = linear(ctx, 0, y - 104, 0, y - 76, [[0, '#fff3c4'], [1, '#e7a93a']]);
-    ctx.fillText('UNLIMITED TINDI', gcx, y - 80 + bob);
+    ctx.fillText('COMPOUND ENTRY', gcx, y - 88 + bob);
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(255,214,140,0.7)';
-    ctx.fillRect(gcx - 120, y - 70 + bob, 240, 1);
+    ctx.fillRect(gcx - 120, y - 78 + bob, 240, 1);
     ctx.restore();
 
     drawShadow(gcx, y + g.h, g.w * 1.05);
-    drawFeast(gcx, y + g.h, g.open);
+    drawGate(gcx, y + g.h, g.open);
 
     if (Math.random() < 0.15 && state === 'play') {
       particles.push({ x: g.x + Math.random() * g.w, y: y + Math.random() * g.h, vx: 0, vy: -30, life: 1, max: 1,
@@ -1033,57 +1044,123 @@
   }
 
 
-  // The Ultimate Gift: a giant platter heaped with every dish in the game
-  function drawFeast(cx, by, open) {
-    const hop = i => open > 0 ? -Math.abs(Math.sin(time * 9 + i * 1.3)) * 7 * open : Math.sin(time * 2 + i) * 0.8;
-    const sc = 1.32 + open * 0.1;
-    ctx.save();
-    ctx.translate(cx, by); ctx.scale(sc, sc); ctx.translate(-cx, -by);
+  // The final goal: the compound gate. Iron doors swing open when Basha Bhai arrives.
+  function drawGate(cx, by, open) {
+    const span = 180, PW = 36, pillarH = 186, doorH = 150;
+    const inL = cx - span / 2, inR = cx + span / 2;
+    const stone = x0 => linear(ctx, x0, 0, x0 + PW, 0, [[0, '#f3d49c'], [0.45, '#d9a866'], [1, '#8f5f2e']]);
 
-    // platter (back half)
-    const brass = linear(ctx, cx - 95, 0, cx + 95, 0, [[0, '#8a5a1c'], [0.3, '#f6d27a'], [0.55, '#c8902e'], [0.8, '#fbe3a0'], [1, '#7a4a12']]);
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.beginPath(); ctx.ellipse(cx, by - 6, 96, 14, 0, 0, TAU); ctx.fill();
-    ctx.fillStyle = brass;
-    ctx.beginPath(); ctx.ellipse(cx, by - 10, 96, 16, 0, 0, TAU); ctx.fill();
-    ctx.fillStyle = linear(ctx, 0, by - 22, 0, by - 2, [[0, '#6e4512'], [1, '#c9952f']]);
-    ctx.beginPath(); ctx.ellipse(cx, by - 12, 84, 11, 0, 0, TAU); ctx.fill();
-
-    // back row
-    drawChicken(ctx, cx - 54, by - 52 + hop(0), 1.75);
-    drawChicken(ctx, cx + 56, by - 52 + hop(1), 1.75);
-    // centrepiece: giant handi of biryani
-    ctx.fillStyle = radial(ctx, cx, by - 70, 5, 70, [[0, 'rgba(255,230,170,0.5)'], [1, 'rgba(255,230,170,0)']]);
-    ctx.fillRect(cx - 70, by - 140, 140, 140);
-    drawBiryani(ctx, cx, by - 66 + hop(2), 2.7);
-    // middle row
-    drawBonda(ctx, cx - 86, by - 30 + hop(3), 1.35);
-    drawIdli(ctx, cx + 88, by - 30 + hop(4), 1.35);
-    drawBiryani(ctx, cx - 36, by - 24 + hop(5), 1.35, false);
-    drawChicken(ctx, cx + 32, by - 22 + hop(6), 1.3);
-    // front row
-    drawIdli(ctx, cx - 64, by - 12 + hop(7), 1.1);
-    drawBonda(ctx, cx + 66, by - 12 + hop(8), 1.15);
-    drawBonda(ctx, cx - 4, by - 10 + hop(9), 1.0);
-
-    // platter front rim
-    ctx.strokeStyle = brass; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.ellipse(cx, by - 10, 94, 15, 0, 0.05, Math.PI - 0.05); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,245,210,0.6)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.ellipse(cx, by - 11, 94, 15, 0, 0.4, Math.PI - 0.4); ctx.stroke();
-
-    // gold gift bow on the front of the platter
-    const gold = linear(ctx, 0, by - 30, 0, by + 4, [[0, '#fff0b0'], [0.45, '#e2a83b'], [1, '#a8701a']]);
-    ctx.fillStyle = gold; ctx.strokeStyle = 'rgba(110,60,10,0.7)'; ctx.lineWidth = 1.2;
-    for (const sgn of [-1, 1]) {
-      ctx.beginPath(); ctx.moveTo(cx, by - 4); ctx.lineTo(cx + sgn * 10, by + 12); ctx.lineTo(cx + sgn * 4, by + 10); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(cx + sgn * 14, by - 8, 14, 7.5, sgn * 0.4, 0, TAU); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = 'rgba(80,40,0,0.35)';
-      ctx.beginPath(); ctx.ellipse(cx + sgn * 14, by - 8, 6.5, 2.8, sgn * 0.4, 0, TAU); ctx.fill();
-      ctx.fillStyle = gold;
+    // compound wall stubs
+    for (const [x0, x1] of [[inL - PW - 70, inL - PW], [inR + PW, inR + PW + 70]]) {
+      ctx.fillStyle = linear(ctx, 0, by - 84, 0, by, [[0, '#f4ead2'], [1, '#c8b58e']]);
+      ctx.fillRect(x0, by - 84, x1 - x0, 84);
+      ctx.fillStyle = '#f6c90e'; ctx.fillRect(x0, by - 70, x1 - x0, 8);
+      ctx.fillStyle = '#9a7d52'; ctx.fillRect(x0 - 3, by - 90, x1 - x0 + 6, 7);
+      ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(x0, by - 83, x1 - x0, 4);
     }
-    ctx.fillStyle = radial(ctx, cx, by - 6, 1, 7, [[0, '#fff0b0'], [1, '#b67a1c']], cx - 2, by - 8);
-    ctx.beginPath(); ctx.arc(cx, by - 6, 6, 0, TAU); ctx.fill(); ctx.stroke();
+
+    // light pouring through the gateway
+    ctx.save();
+    ctx.globalAlpha = 0.25 + open * 0.75;
+    ctx.fillStyle = radial(ctx, cx, by - doorH * 0.45, 10, span * 0.75, [[0, 'rgba(255,248,215,0.95)'], [1, 'rgba(255,214,140,0)']]);
+    ctx.fillRect(inL, by - doorH - 20, span, doorH + 20);
+    ctx.restore();
+
+    // iron doors (hinged on the pillars, swing inward)
+    const swing = Math.cos(open * Math.PI * 0.46);
+    const drawDoor = (hx, dir) => {
+      const w = (span / 2) * Math.max(0.1, swing);
+      const topAt = u => by - doorH - Math.sin(u * Math.PI / 2) * 22 * Math.max(0.25, swing); // arched top toward the centre
+      ctx.save();
+      ctx.strokeStyle = '#17171d'; ctx.lineCap = 'round';
+      // rails
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(hx, by - 10); ctx.lineTo(hx + dir * w, by - 10); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(hx, by - doorH * 0.55); ctx.lineTo(hx + dir * w, by - doorH * 0.55); ctx.stroke();
+      ctx.beginPath();
+      for (let k = 0; k <= 12; k++) { const u = k / 12; const x = hx + dir * w * u; k ? ctx.lineTo(x, topAt(u)) : ctx.moveTo(x, topAt(u)); }
+      ctx.stroke();
+      // bars with gold spear tips
+      const n = 8;
+      for (let i = 0; i <= n; i++) {
+        const u = i / n, x = hx + dir * w * u, yt = topAt(u);
+        ctx.lineWidth = i === 0 || i === n ? 4 : 2.6;
+        ctx.strokeStyle = '#1d1d24';
+        ctx.beginPath(); ctx.moveTo(x, by - 6); ctx.lineTo(x, yt - 4); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(x - 0.8, by - 8); ctx.lineTo(x - 0.8, yt - 2); ctx.stroke();
+        ctx.fillStyle = linear(ctx, 0, yt - 16, 0, yt - 4, [[0, '#fff0b0'], [1, '#b67a1c']]);
+        ctx.beginPath(); ctx.moveTo(x, yt - 15); ctx.lineTo(x + 3.2, yt - 5); ctx.lineTo(x - 3.2, yt - 5); ctx.closePath(); ctx.fill();
+      }
+      // gold rosette
+      const rx = hx + dir * w * 0.5, ry = by - doorH * 0.32;
+      ctx.strokeStyle = '#d9a43a'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.ellipse(rx, ry, 13 * Math.max(0.15, swing), 13, 0, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(rx, ry, 5 * Math.max(0.15, swing), 5, 0, 0, TAU); ctx.stroke();
+      ctx.restore();
+    };
+    drawDoor(inL, 1);
+    drawDoor(inR, -1);
+
+    // pillars with lamps
+    for (const x0 of [inL - PW, inR]) {
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x0 + PW, by - pillarH, 5, pillarH);
+      ctx.fillStyle = stone(x0); ctx.fillRect(x0, by - pillarH, PW, pillarH);
+      ctx.fillStyle = 'rgba(90,50,15,0.25)';
+      for (let yy = by - pillarH + 22; yy < by - 10; yy += 22) ctx.fillRect(x0, yy, PW, 1.5);
+      ctx.fillStyle = stone(x0 - 5); ctx.fillRect(x0 - 5, by - 16, PW + 10, 16);          // plinth
+      ctx.fillStyle = stone(x0 - 6); ctx.fillRect(x0 - 6, by - pillarH - 12, PW + 12, 14); // capital
+      ctx.fillStyle = '#f6c90e'; ctx.fillRect(x0, by - pillarH + 6, PW, 6);
+      // lantern
+      const lx = x0 + PW / 2, ly = by - pillarH - 30;
+      ctx.fillStyle = radial(ctx, lx, ly, 2, 46, [[0, 'rgba(255,230,150,0.75)'], [1, 'rgba(255,200,100,0)']]);
+      ctx.beginPath(); ctx.arc(lx, ly, 46, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#1d1d24'; ctx.fillRect(lx - 9, ly - 14, 18, 3); ctx.fillRect(lx - 7, ly + 11, 14, 3);
+      ctx.fillStyle = radial(ctx, lx, ly, 1, 12, [[0, '#fffbe0'], [1, '#f2b440']]);
+      ctx.fillRect(lx - 7, ly - 11, 14, 22);
+      ctx.strokeStyle = '#1d1d24'; ctx.lineWidth = 1.5; ctx.strokeRect(lx - 7, ly - 11, 14, 22);
+      ctx.beginPath(); ctx.moveTo(lx - 9, ly - 14); ctx.lineTo(lx, ly - 22); ctx.lineTo(lx + 9, ly - 14); ctx.fillStyle = '#1d1d24'; ctx.fill();
+    }
+
+    // arch beam with WELCOME plaque
+    const beamY = by - pillarH - 12 - 18;
+    ctx.fillStyle = linear(ctx, 0, beamY - 34, 0, beamY + 18, [[0, '#f4ead2'], [1, '#c7ad7c']]);
+    ctx.beginPath();
+    ctx.moveTo(inL - PW + 4, beamY + 18); ctx.lineTo(inL - PW + 4, beamY);
+    ctx.quadraticCurveTo(cx, beamY - 62, inR + PW - 4, beamY); ctx.lineTo(inR + PW - 4, beamY + 18);
+    ctx.quadraticCurveTo(cx, beamY - 30, inL - PW + 4, beamY + 18); ctx.fill();
+    ctx.strokeStyle = '#d9a43a'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(inL - PW + 4, beamY + 2); ctx.quadraticCurveTo(cx, beamY - 58, inR + PW - 4, beamY + 2); ctx.stroke();
+    ctx.fillStyle = linear(ctx, 0, beamY - 40, 0, beamY - 12, [[0, '#9b1a2c'], [1, '#5a0a14']]);
+    rrect(ctx, cx - 54, beamY - 42, 108, 28, 5); ctx.fill();
+    ctx.strokeStyle = '#e2a83b'; ctx.lineWidth = 1.5; rrect(ctx, cx - 51, beamY - 39, 102, 22, 4); ctx.stroke();
+    ctx.save();
+    ctx.font = `20px ${FONT_DISPLAY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '3px';
+    ctx.fillStyle = linear(ctx, 0, beamY - 38, 0, beamY - 18, [[0, '#fff3c4'], [1, '#e7a93a']]);
+    ctx.fillText('WELCOME', cx + 1, beamY - 27);
+    ctx.restore();
+
+    // yellow flags on the pillars
+    for (const fx of [inL - PW / 2, inR + PW / 2]) {
+      const top = by - pillarH - 92;
+      ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(fx, by - pillarH - 46); ctx.lineTo(fx, top); ctx.stroke();
+      const wv = Math.sin(time * 5 + fx) * 4;
+      ctx.fillStyle = linear(ctx, fx, 0, fx + 34, 0, [[0, '#f6c90e'], [1, '#e0a800']]);
+      ctx.beginPath(); ctx.moveTo(fx, top);
+      ctx.quadraticCurveTo(fx + 17, top + 2 + wv, fx + 34, top + 10 + wv);
+      ctx.quadraticCurveTo(fx + 17, top + 16 - wv, fx, top + 22); ctx.closePath(); ctx.fill();
+    }
+  }
+
+  function drawGateIcon(x, y) {
+    ctx.save();
+    ctx.fillStyle = '#e2b26a'; ctx.fillRect(x - 11, y - 18, 5, 18); ctx.fillRect(x + 6, y - 18, 5, 18);
+    ctx.strokeStyle = '#e2b26a'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x - 9, y - 18); ctx.quadraticCurveTo(x, y - 27, x + 9, y - 18); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 1;
+    for (let i = -4; i <= 4; i += 2) { ctx.beginPath(); ctx.moveTo(x + i, y); ctx.lineTo(x + i, y - 14); ctx.stroke(); }
     ctx.restore();
   }
 
@@ -1168,9 +1245,11 @@
     drawShadow(cx, feet, p.w);
     if (p.invuln > 0 && Math.floor(p.invuln * 12) % 2 === 0) return;
     const running = Math.abs(p.vx) > 20 && p.onGround;
-    const step = running ? Math.sin(time * 18) : 0;
+    const step = p.dancing ? Math.sin(time * 9) : running ? Math.sin(time * 18) : 0;
     const air = !p.onGround;
-    const lean = clamp(p.vx / 2600, -0.12, 0.12);
+    const lean = p.dancing ? Math.sin(time * 9) * 0.2 : clamp(p.vx / 2600, -0.12, 0.12);
+    const raise1 = p.dancing ? 20 + Math.sin(time * 9) * 8 : (air ? 14 : 0); // hands up when dancing
+    const raise2 = p.dancing ? 20 - Math.sin(time * 9) * 8 : (air ? 14 : 0);
     const OUT = 'rgba(25,12,6,0.7)';
 
     ctx.save();
@@ -1198,7 +1277,7 @@
     ctx.fillStyle = shirt(-bw * p.face, by - 4, 10);
     ctx.beginPath(); ctx.ellipse(-(bw - 1) * p.face, by - 4 - arm * 4 * p.face, 6, 10, 0.5 * p.face, 0, TAU); ctx.fill(); ctx.stroke();
     ctx.fillStyle = skin;
-    ctx.beginPath(); ctx.arc(-(bw + 3) * p.face, by + 4 - arm * 4 * p.face - (air ? 14 : 0), 4.5, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-(bw + 3) * p.face, by + 4 - arm * 4 * p.face - raise1, 4.5, 0, TAU); ctx.fill(); ctx.stroke();
 
     // belly
     ctx.fillStyle = shirt(0, by, bw * 1.3);
@@ -1230,7 +1309,7 @@
     ctx.fillStyle = shirt(bw * p.face, by - 4, 10);
     ctx.beginPath(); ctx.ellipse((bw - 1) * p.face, by - 4 + arm * 4 * p.face, 6, 10, -0.5 * p.face, 0, TAU); ctx.fill(); ctx.stroke();
     ctx.fillStyle = radial(ctx, (bw + 3) * p.face, by + 4, 0.5, 5, [[0, '#dba274'], [1, '#a06a40']]);
-    ctx.beginPath(); ctx.arc((bw + 3) * p.face, by + 4 + arm * 4 * p.face - (air ? 14 : 0), 4.5, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc((bw + 3) * p.face, by + 4 + arm * 4 * p.face - raise2, 4.5, 0, TAU); ctx.fill(); ctx.stroke();
     ctx.restore();
 
     // head
@@ -1305,11 +1384,11 @@
     const bx = 400, bw = 300, byy = 42;
     const prog = clamp((player.x + player.w - start.x) / (gift.x - start.x), 0, 1);
     ctx.textAlign = 'center';
-    hudLabel(bx + bw / 2, 26, 'JOURNEY TO UNLIMITED TINDI');
+    hudLabel(bx + bw / 2, 26, 'JOURNEY TO COMPOUND ENTRY');
     ctx.fillStyle = 'rgba(255,255,255,0.18)'; rrect(ctx, bx, byy - 2, bw, 4, 2); ctx.fill();
     ctx.fillStyle = linear(ctx, bx, 0, bx + bw, 0, [[0, '#f0a83a'], [1, '#fff0b0']]);
     rrect(ctx, bx, byy - 2, Math.max(4, bw * prog), 4, 2); ctx.fill();
-    drawBiryani(ctx, bx + bw + 16, byy + 1, 0.55, false);
+    drawGateIcon(bx + bw + 18, byy + 8);
     drawHeroFace(ctx, bx + bw * prog, byy - 2, 12, 1);
 
     // lives as hero heads
