@@ -25,7 +25,7 @@ On-screen buttons appear automatically on phones and tablets.
 | Bonda | 100 |
 
 Every bite makes the hero burp and get a little fatter. Stomping a veggie gives 200 points.
-Reaching the gift gives a 5000 bonus, plus bonuses for time and remaining lives.
+The Ultimate Gift is a giant platter heaped with biryani, BBQ chickens, idli and bonda. Reaching it gives a 5000 bonus, plus bonuses for time and remaining lives.
 
 ## Custom faces
 There are two ways to add faces:

@@ -422,7 +422,7 @@
     stairsUp(189, 6); stairsDown(195, 6);
     food(194, 4, 'b'); food(195, 4, 'c');
     line(201, 10, 3, ['b', 'c', 'b']);
-    gift = { x: 207 * T, y: 12 * T - 80, w: 80, h: 80, open: 0 };
+    gift = { x: 205 * T, y: 12 * T - 150, w: 240, h: 150, open: 0 };
     start = { x: 3 * T, y: 12 * T - 54 };
   }
 
@@ -938,7 +938,7 @@
   // ------------------------------------------------------------------ Gift
   function drawGift() {
     const g = gift, x = g.x - camX, y = g.y;
-    if (x < -260 || x > VW + 260) return;
+    if (x < -360 || x > VW + 360) return;
     const gcx = x + g.w / 2, gcy = y + g.h / 2;
     // god rays
     ctx.save();
@@ -947,12 +947,12 @@
     ctx.rotate(time * 0.25);
     for (let i = 0; i < 12; i++) {
       ctx.rotate(TAU / 12);
-      ctx.fillStyle = linear(ctx, 0, 0, 230, 0, [[0, 'rgba(255,214,140,0.22)'], [1, 'rgba(255,214,140,0)']]);
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(230, -18); ctx.lineTo(230, 18); ctx.fill();
+      ctx.fillStyle = linear(ctx, 0, 0, 300, 0, [[0, 'rgba(255,214,140,0.22)'], [1, 'rgba(255,214,140,0)']]);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(300, -24); ctx.lineTo(300, 24); ctx.fill();
     }
     ctx.restore();
-    ctx.fillStyle = radial(ctx, gcx, gcy, 10, 130, [[0, 'rgba(255,225,160,0.55)'], [1, 'rgba(255,225,160,0)']]);
-    ctx.fillRect(gcx - 140, gcy - 140, 280, 280);
+    ctx.fillStyle = radial(ctx, gcx, gcy, 10, 170 + g.open * 60, [[0, `rgba(255,225,160,${0.55 + g.open * 0.3})`], [1, 'rgba(255,225,160,0)']]);
+    ctx.fillRect(gcx - 240, gcy - 240, 480, 480);
 
     // label
     const bob = Math.sin(time * 2) * 3;
@@ -961,53 +961,75 @@
     ctx.font = `30px ${FONT_DISPLAY}`;
     if ('letterSpacing' in ctx) ctx.letterSpacing = '4px';
     ctx.shadowColor = 'rgba(255,190,90,0.9)'; ctx.shadowBlur = 16;
-    ctx.fillStyle = linear(ctx, 0, y - 120, 0, y - 92, [[0, '#fff3c4'], [1, '#e7a93a']]);
-    ctx.fillText('THE ULTIMATE GIFT', gcx, y - 96 + bob);
+    ctx.fillStyle = linear(ctx, 0, y - 104, 0, y - 76, [[0, '#fff3c4'], [1, '#e7a93a']]);
+    ctx.fillText('THE ULTIMATE GIFT', gcx, y - 80 + bob);
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(255,214,140,0.7)';
-    ctx.fillRect(gcx - 120, y - 86 + bob, 240, 1);
+    ctx.fillRect(gcx - 120, y - 70 + bob, 240, 1);
     ctx.restore();
 
-    drawShadow(gcx, y + g.h, g.w * 1.1);
-    // box
-    ctx.fillStyle = linear(ctx, x, 0, x + g.w, 0, [[0, '#9b1a2c'], [0.6, '#6e0f1e'], [1, '#3c0610']]);
-    ctx.fillRect(x, y + 14, g.w, g.h - 14);
-    ctx.fillStyle = linear(ctx, 0, y + 14, 0, y + 30, [[0, 'rgba(0,0,0,0.45)'], [1, 'rgba(0,0,0,0)']]);
-    ctx.fillRect(x, y + 14, g.w, 16);
-    const gold = linear(ctx, 0, y, 0, y + g.h, [[0, '#fff0b0'], [0.4, '#e2a83b'], [0.7, '#b67a1c'], [1, '#f0c45e']]);
-    ctx.fillStyle = gold; ctx.fillRect(gcx - 7, y + 14, 14, g.h - 14);
-    ctx.fillStyle = linear(ctx, gcx - 7, 0, gcx + 7, 0, [[0, 'rgba(0,0,0,0.25)'], [0.5, 'rgba(255,255,255,0.25)'], [1, 'rgba(0,0,0,0.25)']]);
-    ctx.fillRect(gcx - 7, y + 14, 14, g.h - 14);
-
-    if (g.open > 0) {
-      ctx.save(); ctx.globalAlpha = g.open;
-      ctx.fillStyle = radial(ctx, gcx, y - g.open * 70, 5, 80, [[0, 'rgba(255,240,200,0.9)'], [1, 'rgba(255,200,120,0)']]);
-      ctx.fillRect(gcx - 90, y - g.open * 70 - 90, 180, 180);
-      drawBiryani(ctx, gcx, y + 10 - g.open * 70, 2.2);
-      ctx.restore();
-    }
-    // lid + bow
-    const lift = g.open * 60, tilt = g.open * -0.6;
-    ctx.save();
-    ctx.translate(gcx, y + 14 - lift); ctx.rotate(tilt);
-    ctx.fillStyle = linear(ctx, 0, -16, 0, 2, [[0, '#b8243a'], [1, '#6e0f1e']]);
-    rrect(ctx, -g.w / 2 - 6, -16, g.w + 12, 18, 3); ctx.fill();
-    ctx.fillStyle = gold; ctx.fillRect(-7, -16, 14, 18);
-    for (const sgn of [-1, 1]) {
-      ctx.fillStyle = gold;
-      ctx.beginPath(); ctx.ellipse(sgn * 15, -24, 15, 8, sgn * 0.45, 0, TAU); ctx.fill();
-      ctx.strokeStyle = 'rgba(110,60,10,0.6)'; ctx.lineWidth = 1.2; ctx.stroke();
-      ctx.fillStyle = 'rgba(80,40,0,0.35)';
-      ctx.beginPath(); ctx.ellipse(sgn * 15, -24, 7, 3, sgn * 0.45, 0, TAU); ctx.fill();
-    }
-    ctx.fillStyle = radial(ctx, 0, -22, 1, 7, [[0, '#fff0b0'], [1, '#b67a1c']], -2, -24);
-    ctx.beginPath(); ctx.arc(0, -21, 6.5, 0, TAU); ctx.fill();
-    ctx.restore();
+    drawShadow(gcx, y + g.h, g.w * 1.05);
+    drawFeast(gcx, y + g.h, g.open);
 
     if (Math.random() < 0.15 && state === 'play') {
       particles.push({ x: g.x + Math.random() * g.w, y: y + Math.random() * g.h, vx: 0, vy: -30, life: 1, max: 1,
         color: '#fff2c4', size: 1.5 + Math.random() * 1.5, grav: 0, glow: true, rot: 0, confetti: false });
     }
+  }
+
+
+  // The Ultimate Gift: a giant platter heaped with every dish in the game
+  function drawFeast(cx, by, open) {
+    const hop = i => open > 0 ? -Math.abs(Math.sin(time * 9 + i * 1.3)) * 7 * open : Math.sin(time * 2 + i) * 0.8;
+    const sc = 1.32 + open * 0.1;
+    ctx.save();
+    ctx.translate(cx, by); ctx.scale(sc, sc); ctx.translate(-cx, -by);
+
+    // platter (back half)
+    const brass = linear(ctx, cx - 95, 0, cx + 95, 0, [[0, '#8a5a1c'], [0.3, '#f6d27a'], [0.55, '#c8902e'], [0.8, '#fbe3a0'], [1, '#7a4a12']]);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(cx, by - 6, 96, 14, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = brass;
+    ctx.beginPath(); ctx.ellipse(cx, by - 10, 96, 16, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = linear(ctx, 0, by - 22, 0, by - 2, [[0, '#6e4512'], [1, '#c9952f']]);
+    ctx.beginPath(); ctx.ellipse(cx, by - 12, 84, 11, 0, 0, TAU); ctx.fill();
+
+    // back row
+    drawChicken(ctx, cx - 54, by - 52 + hop(0), 1.75);
+    drawChicken(ctx, cx + 56, by - 52 + hop(1), 1.75);
+    // centrepiece: giant handi of biryani
+    ctx.fillStyle = radial(ctx, cx, by - 70, 5, 70, [[0, 'rgba(255,230,170,0.5)'], [1, 'rgba(255,230,170,0)']]);
+    ctx.fillRect(cx - 70, by - 140, 140, 140);
+    drawBiryani(ctx, cx, by - 66 + hop(2), 2.7);
+    // middle row
+    drawBonda(ctx, cx - 86, by - 30 + hop(3), 1.35);
+    drawIdli(ctx, cx + 88, by - 30 + hop(4), 1.35);
+    drawBiryani(ctx, cx - 36, by - 24 + hop(5), 1.35, false);
+    drawChicken(ctx, cx + 32, by - 22 + hop(6), 1.3);
+    // front row
+    drawIdli(ctx, cx - 64, by - 12 + hop(7), 1.1);
+    drawBonda(ctx, cx + 66, by - 12 + hop(8), 1.15);
+    drawBonda(ctx, cx - 4, by - 10 + hop(9), 1.0);
+
+    // platter front rim
+    ctx.strokeStyle = brass; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.ellipse(cx, by - 10, 94, 15, 0, 0.05, Math.PI - 0.05); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,245,210,0.6)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(cx, by - 11, 94, 15, 0, 0.4, Math.PI - 0.4); ctx.stroke();
+
+    // gold gift bow on the front of the platter
+    const gold = linear(ctx, 0, by - 30, 0, by + 4, [[0, '#fff0b0'], [0.45, '#e2a83b'], [1, '#a8701a']]);
+    ctx.fillStyle = gold; ctx.strokeStyle = 'rgba(110,60,10,0.7)'; ctx.lineWidth = 1.2;
+    for (const sgn of [-1, 1]) {
+      ctx.beginPath(); ctx.moveTo(cx, by - 4); ctx.lineTo(cx + sgn * 10, by + 12); ctx.lineTo(cx + sgn * 4, by + 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx + sgn * 14, by - 8, 14, 7.5, sgn * 0.4, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(80,40,0,0.35)';
+      ctx.beginPath(); ctx.ellipse(cx + sgn * 14, by - 8, 6.5, 2.8, sgn * 0.4, 0, TAU); ctx.fill();
+      ctx.fillStyle = gold;
+    }
+    ctx.fillStyle = radial(ctx, cx, by - 6, 1, 7, [[0, '#fff0b0'], [1, '#b67a1c']], cx - 2, by - 8);
+    ctx.beginPath(); ctx.arc(cx, by - 6, 6, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.restore();
   }
 
   // ------------------------------------------------------------------ Food, enemies, hero
@@ -1233,9 +1255,7 @@
     ctx.fillStyle = 'rgba(255,255,255,0.18)'; rrect(ctx, bx, byy - 2, bw, 4, 2); ctx.fill();
     ctx.fillStyle = linear(ctx, bx, 0, bx + bw, 0, [[0, '#f0a83a'], [1, '#fff0b0']]);
     rrect(ctx, bx, byy - 2, Math.max(4, bw * prog), 4, 2); ctx.fill();
-    ctx.fillStyle = '#e2a83b'; ctx.fillRect(bx + bw + 6, byy - 7, 14, 13);
-    ctx.fillStyle = '#9b1a2c'; ctx.fillRect(bx + bw + 6, byy - 4, 14, 10);
-    ctx.fillStyle = '#e2a83b'; ctx.fillRect(bx + bw + 11.5, byy - 7, 3, 13);
+    drawBiryani(ctx, bx + bw + 16, byy + 1, 0.55, false);
     drawHeroFace(ctx, bx + bw * prog, byy, 9, 1);
 
     // lives as hero heads
